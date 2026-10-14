@@ -6,7 +6,7 @@ const ROOT = __dirname;
 const INDEX_FILE = 'index.html';
 const PORT = process.env.PORT || 3001;
 const PUBLIC_FILES = [INDEX_FILE, 'icon.svg'];
-const PUBLIC_DIRS = ['css', 'js'];
+const PUBLIC_DIRS = ['css', 'js', 'img'];
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',

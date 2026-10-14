@@ -2,7 +2,8 @@
    day from the Career notes. A day starts blank or from the routine;
    tasks can come from goals (the next steps in Necessity and Personal
    Leadership). The evening review can be carried into the Journal. Below
-   the day: the training mega-cycle. */
+   the day: Covey's time quadrant (the picture from the 2018 site) and the
+   training mega-cycle. */
 (function(){
   const { $, esc } = WK;
   const F = WK.F;
@@ -104,6 +105,13 @@
           </div>
         </aside>
       </div>
+
+      <details class="panel training quadrant-img" open>
+        <summary><h2>Stephen Covey's Time Quadrant</h2><span class="muted small">From the original wang'kalamagokbuk.org, 2018</span></summary>
+        <a href="img/covey-quadrant.jpg" target="_blank" rel="noopener" title="Open full size">
+          <img src="img/covey-quadrant.jpg" alt="Stephen Covey's Time Quadrant: Necessity (manage), Personal Leadership (focus), Deception/Distraction (avoid or delegate), Waste (delete)" loading="lazy">
+        </a>
+      </details>
 
       <details class="panel training">
         <summary><h2>Training mega-cycle</h2><span class="muted small">Periodisation: six weeks, then a deload week (6+1)</span></summary>

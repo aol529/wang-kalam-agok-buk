@@ -253,6 +253,7 @@ dialog::backdrop{background:rgba(10,15,12,.5);}
 .training summary h2::before{content:'▸ ';color:var(--muted);}
 .training[open] summary h2::before{content:'▾ ';}
 .table-wrap{overflow-x:auto;margin-top:12px;}
+.quadrant-img img{display:block;width:100%;max-width:945px;height:auto;margin:12px auto 0;border-radius:6px;border:1px solid var(--line);}
 table{border-collapse:collapse;width:100%;font-size:13.5px;}
 th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top;}
 th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.06em;}
