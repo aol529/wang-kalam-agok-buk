@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wang' Kalam Agok Buk</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/site.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3"></script>
+<script src="js/config.js"></script>
+</head>
+<body>
+
+<!-- Signed out -->
+<section id="signin" class="signin" hidden>
+  <div class="signin-card">
+    <h1>Wang' Kalam Agok Buk</h1>
+    <p class="muted">Journal, vision board, planner and legacy. Private: sign in to open it.</p>
+    <form id="signin-form">
+      <label>Email <input type="email" name="email" autocomplete="username" required></label>
+      <label>Password <input type="password" name="password" autocomplete="current-password" required></label>
+      <button class="btn primary" type="submit">Sign in</button>
+      <p id="signin-error" class="error" role="alert"></p>
+    </form>
+  </div>
+</section>
+
+<!-- Not set up yet -->
+<section id="setup" class="signin" hidden>
+  <div class="signin-card">
+    <h1>Almost there</h1>
+    <p class="muted">Add your Supabase project's URL and anon key to <code>js/config.js</code>, then reload.</p>
+  </div>
+</section>
+
+<!-- Signed in -->
+<div id="app" hidden>
+  <header class="top">
+    <div class="brand">Wang' Kalam Agok Buk</div>
+    <nav class="tabs" id="nav" aria-label="Sections"></nav>
+    <button class="btn ghost small" type="button" id="sign-out">Sign out</button>
+  </header>
+
+  <main>
+    <p class="affirmation" id="affirmation"></p>
+
+    <section id="section-today" class="section" hidden></section>
+
+    <section id="section-vision" class="section" hidden>
+      <div class="section-head">
+        <h1>Vision</h1>
+        <div class="toolbar">
+          <nav class="subtabs" id="vision-tabs">
+            <button type="button" data-view="board">Board</button>
+            <button type="button" data-view="needs">Needs</button>
+            <button type="button" data-view="priorities">Priorities</button>
+          </nav>
+          <label class="toggle"><input type="checkbox" id="show-done"> Show done</label>
+          <button class="btn primary" type="button" id="add-goal">+ Goal</button>
+        </div>
+      </div>
+      <div id="view-board" class="view"></div>
+      <div id="view-needs" class="view"></div>
+      <div id="view-priorities" class="view"></div>
+    </section>
+
+    <section id="section-planner" class="section" hidden></section>
+    <section id="section-journal" class="section" hidden></section>
+    <section id="section-legacy" class="section" hidden></section>
+  </main>
+</div>
+
+<!-- Add / edit a goal -->
+<dialog id="goal-dialog">
+  <form id="goal-form" method="dialog">
+    <h2 id="goal-dialog-title">New goal</h2>
+    <label>Goal <input name="title" required maxlength="140" placeholder="e.g. Deadlift 2× bodyweight"></label>
+    <div class="row2">
+      <label>Life area <select name="category"></select></label>
+      <label>Need <select name="need_level"></select></label>
+    </div>
+    <div class="row2 checks">
+      <label class="check"><input type="checkbox" name="important"> Important</label>
+      <label class="check"><input type="checkbox" name="urgent"> Urgent</label>
+    </div>
+    <label>Next step <input name="next_step" maxlength="200" placeholder="The very next thing to do"></label>
+    <label>Notes <textarea name="notes" rows="3" placeholder="Why it matters, what done looks like"></textarea></label>
+    <div class="row2">
+      <label>Target date <input type="date" name="target_date"></label>
+      <label class="check done-check"><input type="checkbox" name="done"> Done</label>
+    </div>
+    <fieldset class="image-field">
+      <legend>Picture</legend>
+      <div class="image-preview" id="image-preview"></div>
+      <div class="image-actions">
+        <label class="btn">Upload <input type="file" id="image-file" accept="image/jpeg,image/png,image/webp,image/gif" hidden></label>
+        <input name="image_url" type="url" placeholder="…or paste an image link">
+        <button type="button" class="btn ghost" id="image-clear">Remove</button>
+      </div>
+    </fieldset>
+    <p id="goal-error" class="error" role="alert"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn danger" id="goal-delete">Delete</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" id="goal-cancel">Cancel</button>
+      <button type="submit" class="btn primary" id="goal-save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Journal entry or letter -->
+<dialog id="entry-dialog" class="wide-dialog">
+  <form id="entry-form" method="dialog">
+    <h2 id="entry-dialog-title">New entry</h2>
+    <div class="row2">
+      <label>Title <input name="title" maxlength="160" placeholder="A few words"></label>
+      <label>Date <input type="date" name="entry_date"></label>
+    </div>
+    <div class="row2 letter-only">
+      <label>To <input name="to_whom" maxlength="80" placeholder="e.g. my firstborn, or all my children"></label>
+      <label>Open on <input type="date" name="open_on"></label>
+    </div>
+    <textarea name="body" rows="12" class="entry-text"></textarea>
+    <div class="journal-only">
+      <span class="field-label">Mood</span>
+      <div class="mood-pick"></div>
+    </div>
+    <label class="journal-only">Grateful for <input name="gratitude" maxlength="300" placeholder="Three things, big or small"></label>
+    <div>
+      <span class="field-label">Life areas</span>
+      <div class="area-pick"></div>
+    </div>
+    <label class="check journal-only"><input type="checkbox" name="for_children"> 🌳 For my children: keep this in Legacy</label>
+    <p id="entry-error" class="error" role="alert"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn danger" id="entry-delete">Delete</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" id="entry-cancel">Cancel</button>
+      <button type="submit" class="btn primary" id="entry-save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="js/framework.js"></script>
+<script src="js/core.js"></script>
+<script src="js/today.js"></script>
+<script src="js/vision.js"></script>
+<script src="js/planner.js"></script>
+<script src="js/journal.js"></script>
+<script src="js/legacy.js"></script>
+</body>
+</html>
