@@ -47,8 +47,12 @@
   };
 
   const coverOf = p => p.cover_id && WK.galleryUrl ? WK.galleryUrl(p.cover_id) : '';
-  const paragraphs = text => String(text || '').trim().split(/\n{2,}/).map(t => `<p>${esc(t).replace(/\n/g, '<br>')}</p>`).join('');
-  const excerpt = text => { const t = String(text || '').replace(/\s+/g, ' ').trim(); return t.length > 180 ? t.slice(0, 180) + '…' : t; };
+  // Paragraphs at blank lines; **bold**, *italics* and "- " bullets as in
+  // pasted Markdown.
+  const inline = t => esc(t).replace(/\*\*(\S(?:.*?\S)?)\*\*/g, '<b>$1</b>').replace(/\*(\S(?:.*?\S)?)\*/g, '<i>$1</i>');
+  const paragraphs = text => String(text || '').trim().split(/\n{2,}/)
+    .map(t => `<p>${t.split('\n').map(l => inline(l.replace(/^\s*[-*]\s+/, '• '))).join('<br>')}</p>`).join('');
+  const excerpt = text => { const t = String(text || '').replace(/\*+(?=\S)|(?<=\S)\*+/g, '').replace(/\s+/g, ' ').trim(); return t.length > 180 ? t.slice(0, 180) + '…' : t; };
   const catChip = c => `<span class="chip post-cat">${WK.catIcon ? WK.catIcon(c) : ''}${esc(c)}</span>`;
 
   function render(){
