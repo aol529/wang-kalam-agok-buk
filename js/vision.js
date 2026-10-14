@@ -92,6 +92,7 @@
             <h2><span class="area-icon">${c.icon}</span>${esc(c.name)}</h2>
             ${c.archetype ? `<span class="archetype">${esc(c.archetype)}</span>` : ''}
             <span class="count">${mine.length}</span>
+            ${c.name === 'Wealth & Finance' ? '<button type="button" class="btn ghost small riches-btn" id="riches-open">💰 Desire to riches</button>' : ''}
             <button type="button" class="btn ghost small" data-add-category="${esc(c.name)}">+ Add</button>
           </div>
           <div class="cards">
@@ -100,6 +101,7 @@
         </div>`;
     }).join('');
     if ($('add-starters')) $('add-starters').onclick = addStarters;
+    if ($('riches-open')) $('riches-open').onclick = openRiches;
     $('view-board').querySelectorAll('[data-add-category]').forEach(b => {
       b.onclick = () => openGoal(null, { category: b.dataset.addCategory, need_level: F.catOf(b.dataset.addCategory).level });
     });
@@ -333,4 +335,36 @@
     form.title.focus();
   }
   WK.openGoal = openGoal;
+
+  /* ------------- Desire to riches: Napoleon Hill's form, as a goal ------------- */
+  function openRiches(){
+    const form = $('riches-form');
+    form.reset();
+    $('riches-dialog').showModal();
+    form.amount.focus();
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    const R = F.RICHES;
+    $('riches-quote').innerHTML = `${esc(R.quote)} <span>– ${esc(R.quoteBy)}</span>`;
+    $('riches-cancel').onclick = () => $('riches-dialog').close();
+    // The filled-in form becomes a Wealth & Finance goal: the amount as the
+    // title, the plan as the next step, the five affirmations as the notes.
+    $('riches-form').onsubmit = ev => {
+      ev.preventDefault();
+      const f = ev.target;
+      const amount = f.amount.value.trim(), per = f.per.value;
+      const n = Number(amount.replace(/[,$\s]/g, ''));
+      const v = { amount: amount && isFinite(n) ? n.toLocaleString() : amount, per,
+                  give: f.give.value.trim(), date: f.date.value ? WK.fmtDate(f.date.value) : '', plan: f.plan.value.trim() };
+      $('riches-dialog').close();
+      openGoal(null, {
+        title: v.amount ? `Earn ${v.amount} dollars per ${per}` : 'My desire to riches',
+        category: 'Wealth & Finance', need_level: F.catOf('Wealth & Finance').level,
+        important: true, urgent: false,
+        next_step: v.plan.split('\n')[0].slice(0, 200),
+        target_date: f.date.value || '',
+        notes: [R.title, R.note, ...R.lines(v), '', R.quote + ' – ' + R.quoteBy].join('\n')
+      });
+    };
+  });
 })();

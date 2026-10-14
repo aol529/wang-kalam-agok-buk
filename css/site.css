@@ -303,6 +303,26 @@ th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;le
 .mood-pick input:focus-visible + span,.area-pick input:focus-visible + span{outline:2px solid var(--gold);}
 
 /* ------------------------------ Bible ------------------------------ */
+.shelf{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,180px),1fr));gap:10px;margin-bottom:14px;}
+.shelf-card{display:grid;gap:2px;text-align:left;font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--l5);border-radius:10px;padding:10px 12px;cursor:pointer;}
+.shelf-card.mine{border-left-color:var(--gold);}
+.shelf-card b{font-family:Fraunces,Georgia,serif;font-size:16px;font-weight:600;}
+.shelf-card span{font-size:12px;color:var(--muted);}
+.shelf-card:hover,.shelf-card[aria-expanded="true"]{border-color:var(--gold);}
+.devotion{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;}
+.devotion-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.devotion-head h2{font-size:22px;margin:0;}
+.devotion-text,.mine-words{font-family:Fraunces,Georgia,serif;font-size:17px;line-height:1.7;font-style:italic;max-width:760px;}
+.devotion-text p,.mine-words p{margin:0 0 .8em;}
+.conscience-list{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:4px;}
+.conscience-list .check{align-items:flex-start;font-size:14px;}
+.conscience-list input{margin-top:3px;flex:none;}
+.conscience-list input:checked + span{color:var(--muted);text-decoration:line-through;}
+#riches-form{display:grid;gap:12px;padding:22px;}
+#riches-form h2{font-size:22px;}
+.riches-five{margin:0;font-size:14px;}
+.riches-quote{margin:0;font-family:Fraunces,Georgia,serif;font-style:italic;color:var(--gold);}
+.riches-quote span{font-style:normal;font-size:13px;color:var(--muted);}
 .bible-head{margin-bottom:12px;}
 .bible-frame{display:block;width:100%;height:calc(100vh - 150px);min-height:560px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);}
 
@@ -380,6 +400,9 @@ th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;le
 .way-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:16px;}
 .way-grid p{margin:0 0 10px;}
 .way-grid .wide{grid-column:1/-1;}
+.mine-title{font-size:18px;margin:16px 0 6px;}
+.mine-list{padding-left:22px;margin:0;}
+.mine-list li{margin:2px 0;}
 .quad-mini{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .quad-mini > div{display:grid;gap:2px;padding:10px 12px;border-radius:8px;background:var(--bg);border-left:4px solid var(--qc);}
 .quad-mini .q-do{--qc:var(--q-do);} .quad-mini .q-schedule{--qc:var(--q-schedule);} .quad-mini .q-delegate{--qc:var(--q-delegate);} .quad-mini .q-drop{--qc:var(--q-drop);}

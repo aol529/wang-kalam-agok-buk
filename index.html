@@ -114,6 +114,30 @@
   </form>
 </dialog>
 
+<!-- Desire to riches: fills in a Wealth & Finance goal -->
+<dialog id="riches-dialog">
+  <form id="riches-form" method="dialog">
+    <h2>My Desire to Riches Program</h2>
+    <p class="muted small">(Affirmations) Say them aloud twice a day. Fill it in and it becomes a Wealth &amp; Finance goal, with these as its notes.</p>
+    <div class="row2">
+      <label>1. The exact amount of money I desire is <input name="amount" inputmode="decimal" placeholder="dollars" required></label>
+      <label>per
+        <select name="per"><option>month</option><option>year</option><option>week</option><option>day</option></select>
+      </label>
+    </div>
+    <label>2. In return I will give/do <input name="give" maxlength="300"></label>
+    <label>3. I will receive this money on this date <input type="date" name="date"></label>
+    <label>4. The plan I will implement immediately to achieve this is: <textarea name="plan" rows="3"></textarea></label>
+    <p class="riches-five">5. I see and feel myself receiving this money (achieving my Goals).</p>
+    <p class="riches-quote" id="riches-quote"></p>
+    <div class="dialog-actions">
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" id="riches-cancel">Cancel</button>
+      <button type="submit" class="btn primary">Make it a goal →</button>
+    </div>
+  </form>
+</dialog>
+
 <!-- Journal entry or letter -->
 <dialog id="entry-dialog" class="wide-dialog">
   <form id="entry-form" method="dialog">

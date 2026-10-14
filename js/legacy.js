@@ -158,6 +158,16 @@
             <div class="q-${q.key}"><b>${esc(q.name)}</b> <span class="muted small">${esc(q.hint)} · ${esc(q.action)}</span>
               <span class="small">${esc(q.examples.join(', '))}</span></div>`).join('')}</div>
         </section>
+
+        <section class="panel wide">
+          <h2>In my own words, 2014</h2>
+          <p class="muted small">From “All I Want”: my prayer, my affirmation and how I meant to keep a clear conscience.</p>
+          ${F.DEVOTIONS.filter(d => d.mine).map(d => `
+            <h3 class="mine-title">${esc(d.title)}</h3>
+            <div class="mine-words">${WK.devotionHtml(d)}</div>`).join('')}
+          <h3 class="mine-title">Have a clear conscience</h3>
+          <ul class="mine-words mine-list">${F.CONSCIENCE.map(c => `<li>${esc(c)}</li>`).join('')}</ul>
+        </section>
       </div>`;
   }
 })();

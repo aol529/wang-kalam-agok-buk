@@ -1,6 +1,7 @@
 /* Today: the front page. The day's plan, what's in Necessity, the next
    steps in Personal Leadership, the journal prompt, entries from this day
-   in past years, and how the seven life areas are covered. */
+   in past years, how the seven life areas are covered, and the "Have a
+   clear conscience" checklist from 2014. */
 (function(){
   const { $, esc } = WK;
   const F = WK.F;
@@ -19,6 +20,7 @@
     const entries = WK.entries ? WK.entries() : [];
     const plan = WK.planFor ? WK.planFor(today) : null;
     const items = plan ? plan.items : [];
+    const habits = (plan && plan.habits) || [];
     const done = items.filter(i => i.done).length;
     const necessity = goals.filter(g => g.urgent && g.important);
     const leadership = goals.filter(g => !g.urgent && g.important);
@@ -69,6 +71,14 @@
           <ul class="mini-list">${onThisDay.map(e => `<li><button type="button" class="link" data-entry="${e.id}">${esc(e.title || 'Untitled')}</button><span class="muted small">${esc(e.entry_date.slice(0, 4))}</span></li>`).join('')}</ul>
         </section>` : ''}
 
+        <section class="panel conscience">
+          <h2>Have a clear conscience <span class="muted small" id="conscience-count">${habits.length} of ${F.CONSCIENCE.length}</span></h2>
+          <div class="progress"><i id="conscience-bar" style="width:${Math.round(habits.length / F.CONSCIENCE.length * 100)}%"></i></div>
+          <ul class="conscience-list">${F.CONSCIENCE.map((c, i) => `
+            <li><label class="check"><input type="checkbox" data-habit="${i}"${habits.includes(c) ? ' checked' : ''}> <span>${esc(c)}</span></label></li>`).join('')}
+          </ul>
+        </section>
+
         <section class="panel balance">
           <h2>Balance</h2>
           <p class="muted small">Open goals in each life area.</p>
@@ -83,6 +93,19 @@
     el.querySelectorAll('[data-go]').forEach(b => { b.onclick = () => WK.show(b.dataset.go); });
     el.querySelectorAll('[data-goal]').forEach(b => { b.onclick = () => WK.openGoal(WK.goals().find(g => g.id === b.dataset.goal)); });
     el.querySelectorAll('[data-entry]').forEach(b => { b.onclick = () => WK.openEntry(entries.find(e => e.id === b.dataset.entry)); });
+    // Tick a point: save the day's ticks, and undo the tick if it fails.
+    const ticked = () => {
+      const done = F.CONSCIENCE.filter((c, i) => el.querySelector(`[data-habit="${i}"]`).checked);
+      $('conscience-count').textContent = done.length + ' of ' + F.CONSCIENCE.length;
+      $('conscience-bar').style.width = Math.round(done.length / F.CONSCIENCE.length * 100) + '%';
+      return done;
+    };
+    el.querySelectorAll('[data-habit]').forEach(box => {
+      box.onchange = async () => {
+        try { await WK.saveHabits(today, ticked()); }
+        catch (err){ box.checked = !box.checked; ticked(); WK.toast('Not saved: ' + err.message); }
+      };
+    });
     $('today-write').onclick = () => WK.openEntry(null, { kind: 'journal', title: prompt });
   }
 })();

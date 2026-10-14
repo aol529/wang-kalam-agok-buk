@@ -15,6 +15,24 @@
   // Read by Today.
   WK.planFor = iso => plans[iso] || null;
 
+  // Today's "Have a clear conscience" ticks: the texts of the points done.
+  // Saved on their own, so the plan and the ticks never overwrite each other.
+  // Saves go one after another, so quick ticks land in order.
+  let habitQueue = Promise.resolve();
+  WK.saveHabits = (iso, habits) => {
+    const p = plans[iso] || (plans[iso] = blank(iso));
+    p.habits = habits;
+    const run = habitQueue.then(async () => {
+      const { data, error } = await WK.db.from('day_plans')
+        .upsert([{ owner_id: WK.user.id, plan_date: iso, habits, updated_at: new Date().toISOString() }], { onConflict: 'owner_id,plan_date' })
+        .select('id').single();
+      if (error) throw error;
+      p.id = data.id; p._new = false;
+    });
+    habitQueue = run.catch(() => {});
+    return run;
+  };
+
   WK.section({ name: 'planner', label: 'Planner', load, render, reset(){ Object.keys(plans).forEach(k => delete plans[k]); day = WK.isoDate(); } });
 
   function load(){ return fetchWeek(WK.isoDate()); }
@@ -31,7 +49,7 @@
     for (let d = from; d <= to; d = WK.addDays(d, 1)) if (!plans[d]) plans[d] = blank(d);
     (data || []).forEach(p => { plans[p.plan_date] = p; });
   }
-  const blank = iso => ({ plan_date: iso, intention: '', items: [], review: '', _new: true });
+  const blank = iso => ({ plan_date: iso, intention: '', items: [], review: '', habits: [], _new: true });
   const newId = () => Math.random().toString(36).slice(2, 10);
 
   function saveSoon(p){
