@@ -7,6 +7,7 @@ inheritance of advice for my children. Static HTML/CSS/JS backed by Supabase.
 - **Vision**: goals as picture cards by life area, the hierarchy of needs, and the urgent/important quadrants.
 - **Planner**: each day in the time blocks of the working routine, with an evening review and the training mega-cycle.
 - **Journal**: dated entries with mood, gratitude and life areas; any entry can be kept "for my children". The Stoic review starts a morning or evening entry from its questions, and "Blog it" turns an entry into a blog post.
+- **Bible**: the Daily Bible Reading Plan (github.com/aol529/bible-reading-plan), shown in a frame.
 - **Blog**: posts in the seven life areas (or any category you add), draft or published. View reads them like a blog; Edit writes and manages them.
 - **Gallery**: pictures with captions, categories and dates. View shows them as a wall; Edit adds, changes and deletes them. Blog covers come from here.
 - **Legacy**: The Way (the life path explained), letters to open later, and the journal entries kept for the children. Prints as a book.

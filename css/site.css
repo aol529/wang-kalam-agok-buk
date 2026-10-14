@@ -302,6 +302,10 @@ th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;le
 .area-pick input:checked + span{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
 .mood-pick input:focus-visible + span,.area-pick input:focus-visible + span{outline:2px solid var(--gold);}
 
+/* ------------------------------ Bible ------------------------------ */
+.bible-head{margin-bottom:12px;}
+.bible-frame{display:block;width:100%;height:calc(100vh - 150px);min-height:560px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface);}
+
 /* ------------------------------ Blog ------------------------------- */
 #post-form,#photo-form{display:grid;gap:12px;padding:22px;}
 #post-form h2,#photo-form h2{font-size:22px;}
