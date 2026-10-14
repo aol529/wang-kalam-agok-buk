@@ -134,11 +134,44 @@ WK.F = (function(){
     ['', 'Where you come from: our family and our name']
   ];
 
+  // The Stoic daily review: Seneca and Epictetus in the evening, Marcus
+  // Aurelius in the morning. Each template starts a journal entry with its
+  // questions as headings; the title is how the Journal tells them apart.
+  const STOIC = {
+    evening: { key: 'evening', icon: '🌙', title: '🌙 Evening review', label: 'Evening review', headings: [
+      'What bad habit have I cured today?',
+      'What fault have I resisted?',
+      'In what way am I better?',
+      'Where did I go wrong?',
+      'What did I do?',
+      'What duty did I leave undone?',
+      'In my control',
+      'Not in my control',
+      'Done well',
+      'Fell short',
+      'Tomorrow I will…' ] },
+    morning: { key: 'morning', icon: '🌅', title: '🌅 Morning preparation', label: 'Morning preparation', headings: [
+      'What will today likely bring?',
+      'Who might I meet, and how will I respond?',
+      'What is in my control today?',
+      'My intention for today' ] },
+    criteria: [
+      'Review every action and word of the day honestly.',
+      'Judge them against virtue (wisdom, justice, courage, self-control), not against outcomes or what others thought.',
+      'Separate what was up to you from what wasn’t.',
+      'Note what you did well and where you fell short.',
+      'Correct yourself without cruelty, and set an intention for tomorrow.',
+      'In the morning, prepare for what the day will likely bring.' ]
+  };
+  // A template's body: each heading, then room to write under it.
+  STOIC.body = (t, lead) => (lead ? lead + '\n\n' : '') + t.headings.map(h => h + '\n\n').join('\n').trimEnd() + '\n';
+  STOIC.of = e => [STOIC.evening, STOIC.morning].find(t => (e.title || '') === t.title) || null;
+
   const MOODS = ['😞', '😕', '😐', '🙂', '😄'];
 
   const catOf = name => CATEGORIES.find(c => c.name === name) || CATEGORIES[0];
   const quadOf = g => QUADRANTS.find(q => q.urgent === !!g.urgent && q.important === !!g.important);
 
   return { AFFIRMATION, CATEGORIES, LEVELS, REALMS, REALM_ORDER, QUADRANTS, ROUTINE, OTHER_BLOCK, TRAINING,
-           STARTERS, JOURNAL_PROMPTS, LETTER_PROMPTS, MOODS, catOf, quadOf };
+           STARTERS, JOURNAL_PROMPTS, LETTER_PROMPTS, STOIC, MOODS, catOf, quadOf };
 })();

@@ -101,7 +101,7 @@
             <h2>Review the day</h2>
             <p class="muted small">Leadership & Management: what went well, what to change, what's first tomorrow.</p>
             <textarea id="plan-review" rows="6" placeholder="Tonight's review">${esc(p.review)}</textarea>
-            <button type="button" class="btn small" id="plan-to-journal">Write it in the Journal →</button>
+            <button type="button" class="btn small" id="plan-to-journal">🌙 Evening review in the Journal →</button>
           </div>
         </aside>
       </div>
@@ -127,9 +127,10 @@
     if ($('plan-today')) $('plan-today').onclick = () => go(today);
     $('plan-intention').oninput = e => { p.intention = e.target.value; saveSoon(p); };
     $('plan-review').oninput = e => { p.review = e.target.value; saveSoon(p); };
+    // Carry the day's notes into a Stoic evening review in the Journal.
     $('plan-to-journal').onclick = () => {
-      WK.openEntry && WK.openEntry(null, { kind: 'journal', entry_date: day, title: 'Review of the day',
-        body: (p.intention ? 'Intention: ' + p.intention + '\n\n' : '') + (p.review || '') });
+      const lead = [p.intention ? 'Intention: ' + p.intention : '', (p.review || '').trim()].filter(Boolean).join('\n\n');
+      WK.startStoic && WK.startStoic('evening', day, lead);
     };
     drawWeek();
     drawBlocks(p);

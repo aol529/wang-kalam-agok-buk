@@ -133,6 +133,12 @@
           <p>Reason and wisdom lead the spirit. Justice and courage shape your character. Temperance keeps the body's appetites in check.</p>
         </section>
 
+        <section class="panel wide">
+          <h2>Stoicism: the daily review</h2>
+          <div class="stoic-text">${WK.stoicText()}
+          </div>
+        </section>
+
         <section class="panel">
           <h2>The hierarchy of needs</h2>
           <p>Abraham Maslow saw needs as a pyramid: the body's needs, then safety, belonging, esteem and, at the top, becoming all you can be. The lower ones must be steady before the higher ones can hold your attention.</p>

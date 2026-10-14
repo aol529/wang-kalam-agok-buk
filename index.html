@@ -69,6 +69,8 @@
 
     <section id="section-planner" class="section" hidden></section>
     <section id="section-journal" class="section" hidden></section>
+    <section id="section-blog" class="section" hidden></section>
+    <section id="section-gallery" class="section" hidden></section>
     <section id="section-legacy" class="section" hidden></section>
   </main>
 </div>
@@ -138,10 +140,78 @@
     <div class="dialog-actions">
       <button type="button" class="btn danger" id="entry-delete">Delete</button>
       <span class="spacer"></span>
+      <button type="button" class="btn" id="entry-blog" title="Save this entry and start a blog post from it">📝 Blog it</button>
       <button type="button" class="btn ghost" id="entry-cancel">Cancel</button>
       <button type="submit" class="btn primary" id="entry-save">Save</button>
     </div>
   </form>
+</dialog>
+
+<!-- Blog post -->
+<dialog id="post-dialog" class="wide-dialog">
+  <form id="post-form" method="dialog">
+    <h2 id="post-dialog-title">New post</h2>
+    <p id="post-source" class="muted small" hidden>📓 Started from a journal entry. Editing the post doesn't change the entry.</p>
+    <label>Title <input name="title" maxlength="160" required placeholder="The headline"></label>
+    <div class="row3">
+      <label>Category <input name="category" list="post-cats" maxlength="60" placeholder="Pick one or type a new one"></label>
+      <label>Status
+        <select name="status"><option value="draft">Draft</option><option value="published">Published</option></select>
+      </label>
+      <label>Date <input type="date" name="published_on"></label>
+    </div>
+    <datalist id="post-cats"></datalist>
+    <fieldset class="image-field">
+      <legend>Cover</legend>
+      <div class="image-preview" id="cover-preview"></div>
+      <div class="image-actions">
+        <button type="button" class="btn" id="cover-choose">Choose from Gallery</button>
+        <label class="btn">Upload <input type="file" id="cover-file" accept="image/jpeg,image/png,image/webp,image/gif" hidden></label>
+        <button type="button" class="btn ghost" id="cover-clear">Remove</button>
+        <span id="cover-status" class="muted small"></span>
+      </div>
+      <div id="cover-picker" hidden><div class="cover-grid" id="cover-grid"></div></div>
+    </fieldset>
+    <textarea name="body" rows="14" class="entry-text" placeholder="Write the post"></textarea>
+    <p id="post-error" class="error" role="alert"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn danger" id="post-delete">Delete</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" id="post-cancel">Cancel</button>
+      <button type="submit" class="btn primary" id="post-save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Gallery picture: edit -->
+<dialog id="photo-dialog">
+  <form id="photo-form" method="dialog">
+    <h2>Edit picture</h2>
+    <div class="image-preview photo-preview" id="photo-preview"></div>
+    <label>Caption <input name="caption" maxlength="200" placeholder="What it shows, where, who"></label>
+    <div class="row2">
+      <label>Category <input name="category" list="post-cats" maxlength="60" placeholder="Optional"></label>
+      <label>Date <input type="date" name="taken_on"></label>
+    </div>
+    <p id="photo-error" class="error" role="alert"></p>
+    <div class="dialog-actions">
+      <button type="button" class="btn danger" id="photo-delete">Delete</button>
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" id="photo-cancel">Cancel</button>
+      <button type="submit" class="btn primary" id="photo-save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Gallery picture: view large -->
+<dialog id="viewer" class="viewer" aria-label="Picture">
+  <img id="viewer-img" alt="">
+  <div class="viewer-bar">
+    <button type="button" class="btn small" id="viewer-prev" aria-label="Previous">←</button>
+    <span id="viewer-caption"></span>
+    <button type="button" class="btn small" id="viewer-next" aria-label="Next">→</button>
+    <button type="button" class="btn small" id="viewer-close">Close</button>
+  </div>
 </dialog>
 
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
@@ -152,6 +222,8 @@
 <script src="js/vision.js"></script>
 <script src="js/planner.js"></script>
 <script src="js/journal.js"></script>
+<script src="js/blog.js"></script>
+<script src="js/gallery.js"></script>
 <script src="js/legacy.js"></script>
 </body>
 </html>
