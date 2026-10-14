@@ -34,7 +34,8 @@ WK.F = (function(){
   };
   const REALM_ORDER = ['Spirit', 'Mind', 'Body'];
 
-  // Covey's names for the four boxes, with the examples from the sketch.
+  // Covey's names for the four boxes, with the examples from the sketch
+  // and the 2018 site's quadrant table.
   const QUADRANTS = [
     { key: 'do',       name: 'Necessity',           action: 'Manage',            urgent: true,  important: true,
       hint: 'Urgent & important',
@@ -44,10 +45,10 @@ WK.F = (function(){
       examples: ['Preparation and planning', 'Prevention', 'Values clarification', 'Exercise and training', 'Relationship building', 'True recreation and relaxation'] },
     { key: 'delegate', name: 'Deception',           action: 'Avoid or delegate', urgent: true,  important: false,
       hint: 'Urgent, not important',
-      examples: ['Interruptions', 'Social media and internet surfing', 'Phone texts and emails', 'Indoor and outdoor games'] },
+      examples: ['Interruptions', 'Some mail and reports', 'Some meetings', 'Popular activities', 'Social media and internet surfing', 'Phone texts and emails', 'Indoor and outdoor games'] },
     { key: 'drop',     name: 'Waste',               action: 'Delete',            urgent: false, important: false,
       hint: 'Not urgent, not important',
-      examples: ['Trivia and busy work', 'Escape activities', 'Time wasters and mindless TV', '"Pressing matters"'] }
+      examples: ['Trivia and busy work', 'Junk mail', 'Escape activities', 'Time wasters and mindless TV', '"Pressing matters"'] }
   ];
 
   // The working day from the Career notes: blocks of time, each with its
