@@ -1,33 +1,30 @@
 /* Bible: prayers and affirmations from "All I Want" (2014) on a shelf
-   (open one to read it), then the Daily Bible Reading Plan (its own site,
-   aol529/bible-reading-plan) in a frame. The frame loads the first time
-   the tab opens and then stays, so switching tabs doesn't lose your place.
-   On the live site both share aol529.github.io, so its reading progress is
-   the same as on its own. */
+   (open one to read it), then the Daily Bible Reading Plan (bible-plan.js,
+   from aol529/bible-reading-plan). The plan is drawn the first time the
+   tab opens and then stays, so switching tabs doesn't lose your place. */
 (function(){
   const { $, esc } = WK;
   const F = WK.F;
-  const SRC = 'https://aol529.github.io/bible-reading-plan/';
 
   let open = null;            // key of the prayer being read
+  let plan = null;            // the reading plan, once drawn
 
-  WK.section({ name: 'bible', label: 'Bible', render });
+  WK.section({ name: 'bible', label: 'Bible', render, hide: () => plan && plan.hide() });
 
   // Paragraphs at blank lines, line breaks kept. Legacy uses it too.
   WK.devotionHtml = d => String(d.text).split(/\n{2,}/).map(p => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('');
 
   function render(){
     const el = $('section-bible');
-    if (!el.querySelector('iframe')){
+    if (!plan){
       el.innerHTML = `
-        <div class="section-head bible-head">
-          <h1>Bible</h1>
-          <a class="btn small" href="${SRC}" target="_blank" rel="noopener">Open the reading plan on its own ↗</a>
-        </div>
+        <div class="section-head bible-head"><h1>Bible</h1></div>
         <div id="devotions"></div>
-        <iframe class="bible-frame" src="${SRC}" title="Daily Bible Reading Plan"></iframe>`;
+        <div class="brp" id="bible-plan"></div>`;
+      plan = WK.biblePlan.mount($('bible-plan'));
     }
     drawShelf();
+    plan.refresh();
   }
 
   function drawShelf(){

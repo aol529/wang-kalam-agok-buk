@@ -26,7 +26,7 @@
     return null;
   }
 
-  const sections = [];   // { name, label, load, render, reset }
+  const sections = [];   // { name, label, load, render, reset, hide }
   let current = store('wk_section') || 'today';
 
   Object.assign(WK, {
@@ -35,6 +35,8 @@
     section(def){ sections.push(def); },
     show(name){
       if (!sections.some(s => s.name === name)) name = 'today';
+      const leaving = name !== current && sections.find(s => s.name === current);
+      if (leaving && leaving.hide) leaving.hide();
       current = name;
       store('wk_section', name);
       document.querySelectorAll('#nav [data-section]').forEach(b => b.setAttribute('aria-current', b.dataset.section === name ? 'page' : 'false'));

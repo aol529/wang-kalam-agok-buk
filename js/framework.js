@@ -176,7 +176,7 @@ hallowed be your name,
 your kingdom come, your will be done on earth as it is in heaven.
 Give us today our daily bread.
 Forgive us our debts, as we also have forgiven our debtors.
-And lead us not into temptation, but deliver us from the evil one.'
+And lead us not into temptation, but deliver us from the evil one,
 for yours is the kingdom and the power and the glory for ever.
 Amen.` },
     { key: 'spirit', title: 'Prayer to the Holy Spirit', by: '', text:
@@ -194,6 +194,23 @@ Protect me in all temptations and
 Console me in all afflictions.
 Graciously hear me, O Holy Spirit and pour thy light into my heart, my soul and my mind.
 Assist me to live a Holy Life and grow in godness and grace. Amen` },
+    { key: 'serenity', title: 'The Serenity Prayer', by: 'Reinhold Niebuhr', text:
+`God grant me the serenity
+to accept the things I cannot change;
+courage to change the things I can;
+and wisdom to know the difference.
+
+Living one day at a time;
+enjoying one moment at a time;
+accepting hardships as the pathway to peace;
+taking, as He did, this sinful world
+as it is, not as I would have it;
+trusting that He will make all things right
+if I surrender to His Will;
+that I may be reasonably happy in this life
+and supremely happy with Him
+forever in the next.
+Amen.` },
     { key: 'dearlord', title: 'Dear Lord', by: 'My prayer, 2014', mine: true, text:
 `Dear Lord.
 
