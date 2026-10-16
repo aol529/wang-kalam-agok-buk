@@ -56,24 +56,49 @@ WK.F = (function(){
   const ROUTINE = [
     { block: 'Self-Management', time: '2½ hrs', items: [
       'Gym, run or swim (45–90 min)',
-      'Read at least a chapter (15–30 min)',
-      'Email and social media (15 min max)',
+      'Read or finish at least a chapter of a book (15–30 min)',
+      'Check email and social media (15 min max)',
       'Revise notes (15–30 min)' ] },
     { block: 'Planning & Research', time: '2 hrs', items: [
-      'Product research & development; update social media (30–45 min)',
-      'Sales & marketing material: catalogue, presentation (15–30 min)',
+      'Product research & development; update Facebook, Instagram, LinkedIn and Twitter (30–45 min)',
+      'Sales & marketing campaign: desktop publish the catalogue and PowerPoint presentation (15–30 min)',
       'Follow-up emails (15–30 min)' ] },
     { block: 'Communication & Networking', time: '2 hrs', items: [
-      'Customer research: update prospect list, check profiles for rapport (45–90 min)',
+      'Customer research: update the prospect list, check their Facebook, Instagram and LinkedIn profiles for rapport (45–90 min)',
       'Contact prospects: cold emails & calls (45–60 min)' ] },
     { block: 'Interpersonal & Teamwork', time: '2 hrs', items: [
       'Set and go for appointments (45–60 min)' ] },
     { block: 'Leadership & Management', time: 'Evening', items: [
       'Review the day',
-      'Back up files and drives',
+      'Defragment, check disk and back up the hard drive',
       'Gym, run, swim, yoga or Pilates',
       'Journal or blog' ] }
   ];
+
+  // The Career notes themselves (Career.pdf, 5 October 2018), word for word.
+  const CAREER = {
+    title: 'Career', date: '2018-10-05',
+    blocks: [
+      { block: 'Self-Management', time: '2hrs 30min', lines: [
+        'Gym/run/swim (45- 90mins)',
+        'Read/Finish at least a chapter /book (15-30 min)',
+        'Check email, social media (15 min max)',
+        'Revise notes (15-30min)' ] },
+      { block: 'Planning and Research', time: '2hrs', lines: [
+        'Product research and development (update social media (Facebook, Instagram, LinkedIn, Twitter) (30-45 min)',
+        'Sales & Marketing campaign Desktop publish - catalogue, PowerPoint presentation (15-30 min)',
+        'Follow up emails (15-30 min)' ] },
+      { block: 'Communication and Networking', time: '2hrs', lines: [
+        'Customer research (updating Prospect list, checking out Facebook, Instagram and LinkedIn profile for rapport) (45-90 min)',
+        'Contact prospects - cold emails & calls (45-60 min)' ] },
+      { block: 'Interpersonal and Teamwork', time: '2hrs', lines: [
+        'Setting and going for appointments (45-60 min)' ] },
+      { block: 'Leadership and Management', time: '', lines: [
+        'Review the day Defragment & Check Disk Back up hard drive',
+        'Gym&/ (run/swim/yoga/Pilates)',
+        'Journal&/blog' ] }
+    ]
+  };
   const OTHER_BLOCK = 'Other';
 
   // Training mega-cycle periodisation (6+1 = six weeks, then a deload week).
@@ -307,6 +332,6 @@ Amen` }
   const catOf = name => CATEGORIES.find(c => c.name === name) || CATEGORIES[0];
   const quadOf = g => QUADRANTS.find(q => q.urgent === !!g.urgent && q.important === !!g.important);
 
-  return { AFFIRMATION, CATEGORIES, LEVELS, REALMS, REALM_ORDER, QUADRANTS, ROUTINE, OTHER_BLOCK, TRAINING,
+  return { AFFIRMATION, CATEGORIES, LEVELS, REALMS, REALM_ORDER, QUADRANTS, ROUTINE, CAREER, OTHER_BLOCK, TRAINING,
            STARTERS, JOURNAL_PROMPTS, LETTER_PROMPTS, STOIC, DEVOTIONS, CONSCIENCE, RICHES, MOODS, catOf, quadOf };
 })();

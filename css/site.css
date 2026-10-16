@@ -322,6 +322,11 @@ th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;le
 #riches-form h2{font-size:22px;}
 .riches-five{margin:0;font-size:14px;}
 .riches-quote{margin:0;font-family:Fraunces,Georgia,serif;font-style:italic;color:var(--gold);}
+.career-sheet{display:grid;gap:12px;padding:22px;}
+.career-sheet h2{font-size:22px;}
+#career-blocks{display:grid;gap:14px;}
+.career-block h3{margin:0 0 4px;font-size:16px;}
+.career-block ul{margin:0;padding-left:20px;font-size:14px;}
 .riches-quote span{font-style:normal;font-size:13px;color:var(--muted);}
 .bible-head{margin-bottom:12px;}
 

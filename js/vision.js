@@ -92,6 +92,7 @@
             <h2><span class="area-icon">${c.icon}</span>${esc(c.name)}</h2>
             ${c.archetype ? `<span class="archetype">${esc(c.archetype)}</span>` : ''}
             <span class="count">${mine.length}</span>
+            ${c.name === 'Career' ? '<button type="button" class="btn ghost small riches-btn" id="career-open">💼 Career day</button>' : ''}
             ${c.name === 'Wealth & Finance' ? '<button type="button" class="btn ghost small riches-btn" id="riches-open">💰 Desire to riches</button>' : ''}
             <button type="button" class="btn ghost small" data-add-category="${esc(c.name)}">+ Add</button>
           </div>
@@ -102,6 +103,7 @@
     }).join('');
     if ($('add-starters')) $('add-starters').onclick = addStarters;
     if ($('riches-open')) $('riches-open').onclick = openRiches;
+    if ($('career-open')) $('career-open').onclick = () => $('career-dialog').showModal();
     $('view-board').querySelectorAll('[data-add-category]').forEach(b => {
       b.onclick = () => openGoal(null, { category: b.dataset.addCategory, need_level: F.catOf(b.dataset.addCategory).level });
     });
@@ -335,6 +337,19 @@
     form.title.focus();
   }
   WK.openGoal = openGoal;
+
+  /* ------------- Career day: the 2018 Career notes ------------- */
+  document.addEventListener('DOMContentLoaded', () => {
+    const C = F.CAREER;
+    $('career-date').textContent = WK.fmtDate(C.date);
+    $('career-blocks').innerHTML = C.blocks.map(b => `
+      <section class="career-block">
+        <h3>${esc(b.block)}${b.time ? ` <span class="muted small">(${esc(b.time)})</span>` : ''}</h3>
+        <ul>${b.lines.map(l => `<li>${esc(l)}</li>`).join('')}</ul>
+      </section>`).join('');
+    $('career-close').onclick = () => $('career-dialog').close();
+    $('career-plan').onclick = () => { $('career-dialog').close(); WK.show('planner'); };
+  });
 
   /* ------------- Desire to riches: Napoleon Hill's form, as a goal ------------- */
   function openRiches(){
