@@ -1,12 +1,13 @@
 /* Today: the front page. The day's plan, what's in Necessity, the next
    steps in Personal Leadership, the journal prompt, entries from this day
-   in past years, how the seven life areas are covered, and the "Have a
-   clear conscience" checklist from 2014. */
+   in past years, how the seven life areas are covered, the "Have a
+   clear conscience" checklist from 2014, and the Days without timers
+   (timers.js). */
 (function(){
   const { $, esc } = WK;
   const F = WK.F;
 
-  WK.section({ name: 'today', label: 'Today', render });
+  WK.section({ name: 'today', label: 'Today', load: () => WK.timers.load(), reset: () => WK.timers.reset(), render });
 
   function greeting(){
     const h = new Date().getHours();
@@ -45,6 +46,8 @@
           : '<p class="empty">Nothing planned yet.</p>'}
           <button type="button" class="btn small" data-go="planner">${items.length ? 'Open the planner' : 'Plan the day'}</button>
         </section>
+
+        ${WK.timers.panel()}
 
         <section class="panel">
           <h2><span class="dot q-do"></span>Necessity <span class="muted small">Manage</span></h2>
@@ -106,6 +109,7 @@
         catch (err){ box.checked = !box.checked; ticked(); WK.toast('Not saved: ' + err.message); }
       };
     });
+    WK.timers.bind(el);
     $('today-write').onclick = () => WK.openEntry(null, { kind: 'journal', title: prompt });
   }
 })();

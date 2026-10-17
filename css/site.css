@@ -227,6 +227,20 @@ dialog::backdrop{background:rgba(10,15,12,.5);}
 .bars b{text-align:right;}
 .bars li.none span{color:var(--danger);}
 
+.timers h2{justify-content:space-between;}
+.timer-list{list-style:none;margin:0;padding:0;display:grid;gap:14px;}
+.timer{display:grid;gap:4px;padding-bottom:12px;border-bottom:1px solid var(--line);}
+.timer:last-child{border-bottom:0;padding-bottom:0;}
+.timer-head{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.timer-name{font-family:Fraunces,Georgia,serif;font-size:17px;font-weight:600;}
+.timer-clock{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.timer-clock b{font-family:Fraunces,Georgia,serif;font-size:26px;color:var(--accent);font-weight:700;}
+.timer p{margin:0;}
+.timer-note{font-family:Fraunces,Georgia,serif;font-style:italic;font-size:14px;}
+.btn.confirm{background:var(--danger);border-color:var(--danger);color:#fff;}
+#timer-form{display:grid;gap:12px;padding:22px;}
+#timer-form h2{font-size:22px;}
+
 /* ------------------------------- Planner ----------------------------- */
 .day-bar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px;}
 .day-title{flex:1;min-width:200px;}
