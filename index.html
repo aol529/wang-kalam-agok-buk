@@ -18,13 +18,43 @@
 <section id="signin" class="signin" hidden>
   <div class="signin-card">
     <h1>Wang' Kalam Agok Buk</h1>
-    <p class="muted">Journal, vision board, planner and legacy. Private: sign in to open it.</p>
-    <form id="signin-form">
+    <p class="muted">Journal, vision board, planner and legacy. Private: each account sees only its own.</p>
+
+    <form id="signin-form" class="auth-form" data-mode="signin">
       <label>Email <input type="email" name="email" autocomplete="username" required></label>
-      <label>Password <input type="password" name="password" autocomplete="current-password" required></label>
+      <label>Password <span class="pw"><input type="password" name="password" autocomplete="current-password" required><button type="button" class="pw-toggle" aria-pressed="false">Show</button></span></label>
+      <label class="check"><input type="checkbox" name="remember"> Keep me signed in</label>
       <button class="btn primary" type="submit">Sign in</button>
-      <p id="signin-error" class="error" role="alert"></p>
+      <p class="auth-links"><button type="button" class="link" data-auth="forgot">Forgot password?</button><button type="button" class="link" data-auth="signup">Create an account</button></p>
     </form>
+
+    <form id="signup-form" class="auth-form" data-mode="signup" hidden>
+      <h2>Create an account</h2>
+      <label>Email <input type="email" name="email" autocomplete="username" required></label>
+      <label>Password <span class="pw"><input type="password" name="password" autocomplete="new-password" minlength="8" required><button type="button" class="pw-toggle" aria-pressed="false">Show</button></span></label>
+      <label>Confirm password <input type="password" name="confirm" autocomplete="new-password" minlength="8" required></label>
+      <button class="btn primary" type="submit">Create account</button>
+      <p class="auth-links"><button type="button" class="link" data-auth="signin">Have an account? Sign in</button></p>
+    </form>
+
+    <form id="forgot-form" class="auth-form" data-mode="forgot" hidden>
+      <h2>Reset your password</h2>
+      <p class="muted">Enter your email and a link to set a new password will be sent to it.</p>
+      <label>Email <input type="email" name="email" autocomplete="username" required></label>
+      <button class="btn primary" type="submit">Send reset link</button>
+      <p class="auth-links"><button type="button" class="link" data-auth="signin">Back to sign in</button></p>
+    </form>
+
+    <form id="newpass-form" class="auth-form" data-mode="newpass" hidden>
+      <h2>Choose a new password</h2>
+      <input type="email" name="username" autocomplete="username" hidden>
+      <label>New password <span class="pw"><input type="password" name="password" autocomplete="new-password" minlength="8" required><button type="button" class="pw-toggle" aria-pressed="false">Show</button></span></label>
+      <label>Confirm new password <input type="password" name="confirm" autocomplete="new-password" minlength="8" required></label>
+      <button class="btn primary" type="submit">Save password</button>
+    </form>
+
+    <p id="signin-error" class="error" role="alert"></p>
+    <p id="signin-note" class="note" role="status"></p>
   </div>
 </section>
 
@@ -41,7 +71,10 @@
   <header class="top">
     <div class="brand">Wang' Kalam Agok Buk</div>
     <nav class="tabs" id="nav" aria-label="Sections"></nav>
-    <button class="btn ghost small" type="button" id="sign-out">Sign out</button>
+    <span class="top-actions">
+      <button class="btn ghost small" type="button" id="account-open">Account</button>
+      <button class="btn ghost small" type="button" id="sign-out">Sign out</button>
+    </span>
   </header>
 
   <main>
@@ -253,10 +286,41 @@
   </div>
 </dialog>
 
+<!-- Account: change email or password -->
+<dialog id="account-dialog">
+  <div class="account">
+    <h2>Account</h2>
+    <p class="muted">Signed in as <b id="account-email"></b></p>
+
+    <form id="email-form" class="auth-form">
+      <h3>Change email</h3>
+      <label>New email <input type="email" name="email" autocomplete="email" required></label>
+      <button class="btn" type="submit">Change email</button>
+    </form>
+
+    <form id="password-form" class="auth-form">
+      <h3>Change password</h3>
+      <input type="email" name="username" autocomplete="username" hidden>
+      <label>Current password <span class="pw"><input type="password" name="current" autocomplete="current-password" required><button type="button" class="pw-toggle" aria-pressed="false">Show</button></span></label>
+      <label>New password <span class="pw"><input type="password" name="password" autocomplete="new-password" minlength="8" required><button type="button" class="pw-toggle" aria-pressed="false">Show</button></span></label>
+      <label>Confirm new password <input type="password" name="confirm" autocomplete="new-password" minlength="8" required></label>
+      <button class="btn" type="submit">Change password</button>
+    </form>
+
+    <p id="account-error" class="error" role="alert"></p>
+    <p id="account-note" class="note" role="status"></p>
+    <div class="dialog-actions">
+      <span class="spacer"></span>
+      <button type="button" class="btn ghost" id="account-close">Close</button>
+    </div>
+  </div>
+</dialog>
+
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script src="js/framework.js"></script>
 <script src="js/core.js"></script>
+<script src="js/auth.js"></script>
 <script src="js/today.js"></script>
 <script src="js/vision.js"></script>
 <script src="js/planner.js"></script>

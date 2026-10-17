@@ -53,6 +53,24 @@ code{background:var(--surface-2);padding:1px 5px;border-radius:4px;}
 .signin-card{width:100%;max-width:360px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow);}
 .signin-card h1{font-size:30px;}
 .signin-card form{display:grid;gap:12px;margin-top:16px;}
+.signin-card h2{font-size:21px;}
+.signin-card form .muted{margin:0;}
+.auth-links{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px 12px;margin:0;font-size:13.5px;}
+.auth-links .link{color:var(--accent);}
+.note{color:var(--accent);font-size:13.5px;margin:6px 0 0;}
+.note:empty,.signin-card .error:empty{display:none;}
+.signin-card .check input{accent-color:var(--accent);}
+.pw{position:relative;display:block;}
+.pw input{padding-right:58px;}
+.pw-toggle{position:absolute;top:50%;right:6px;transform:translateY(-50%);border:0;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:600;padding:4px 6px;border-radius:6px;cursor:pointer;}
+.pw-toggle:hover{color:var(--accent);}
+.top-actions{display:flex;gap:6px;}
+.account{display:grid;gap:14px;padding:22px;}
+.account h2{font-size:22px;}
+.account h3{font-size:16px;}
+.account p{margin:0;}
+.account .auth-form{display:grid;gap:10px;justify-items:stretch;padding-top:14px;border-top:1px solid var(--line);}
+.account .auth-form .btn{justify-self:start;}
 
 label{display:grid;gap:4px;font-size:13px;font-weight:500;color:var(--muted);}
 input,select,textarea{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%;min-width:0;}

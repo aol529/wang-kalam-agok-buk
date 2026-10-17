@@ -59,30 +59,22 @@
       $('setup').hidden = false;
       return;
     }
-    WK.db = supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
-
-    $('signin-form').onsubmit = async e => {
-      e.preventDefault();
-      const f = e.target;
-      $('signin-error').textContent = '';
-      const { error } = await WK.db.auth.signInWithPassword({ email: f.email.value.trim(), password: f.password.value });
-      if (error) $('signin-error').textContent = error.message;
-      else f.reset();
-    };
-    $('sign-out').onclick = () => WK.db.auth.signOut();
-
-    let ready = false;
-    WK.db.auth.onAuthStateChange((_event, session) => {
-      const next = session ? session.user : null;
-      if (ready && (next && next.id) === (WK.user && WK.user.id)) return;
-      ready = true;
-      WK.user = next;
-      $('signin').hidden = !!next;
-      $('app').hidden = !next;
-      if (next) loadAll();
-      else sections.forEach(s => s.reset && s.reset());
-    });
+    // Sign in, sign up, password reset and the Account dialog live in js/auth.js.
+    WK.db = supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, { auth: { storage: WK.authStorage } });
+    WK.startAuth();
   });
+
+  // Show the site for this user, or the sign-in screen for null.
+  let shown;
+  WK.enter = user => {
+    const id = user ? user.id : null;
+    if (id === shown) return;
+    shown = id;
+    $('signin').hidden = !!user;
+    $('app').hidden = !user;
+    if (user) loadAll();
+    else sections.forEach(s => s.reset && s.reset());
+  };
 
   async function loadAll(){
     WK.show(current);

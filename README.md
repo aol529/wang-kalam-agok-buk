@@ -18,7 +18,7 @@ The life path itself (areas, levels, virtues, quadrants, routine, prompts) lives
 
 1. Create a Supabase project.
 2. In its SQL editor, run `sql/01-goals.sql`, then `sql/02-journal-planner.sql`, then `sql/03-blog-gallery.sql`, then `sql/04-clear-conscience.sql`.
-3. Authentication → Users → **Add user** (your own login), then turn off **Allow new users to sign up**.
+3. Authentication → Sign In / Providers: leave **Allow new users to sign up** on so people can create accounts on the site (each account sees only its own data); turn it off to keep the site to existing accounts. Authentication → URL Configuration: set **Site URL** to the live site and add `http://localhost:3001/` to **Redirect URLs**, so confirm-email and reset-password links come back here.
 4. Put the project URL and anon key in `js/config.js` (Project Settings → API).
 5. `npm start`, then open http://localhost:3001.
 
