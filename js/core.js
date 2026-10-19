@@ -1,5 +1,5 @@
 /* Core: Supabase, sign-in, the section menu and small helpers. Each
-   section (Today, Vision, Planner, Journal, Bible, Blog, Gallery, Legacy) registers itself with
+   section (Today, Vision, Planner, Journal, Bible, Systems, Blog, Gallery, Legacy) registers itself with
    WK.section(); once you are signed in, every section loads its data and
    the open one draws. */
 (function(){

@@ -1,13 +1,16 @@
 /* Today: the front page. The day's plan, what's in Necessity, the next
    steps in Personal Leadership, the journal prompt, entries from this day
    in past years, how the seven life areas are covered, the "Have a
-   clear conscience" checklist from 2014, and the Days without timers
-   (timers.js). */
+   clear conscience" checklist from 2014, the Days without timers
+   (timers.js), the focus timer (focus.js) and the Minimum Home Routine
+   (routine.js). */
 (function(){
   const { $, esc } = WK;
   const F = WK.F;
 
-  WK.section({ name: 'today', label: 'Today', load: () => WK.timers.load(), reset: () => WK.timers.reset(), render });
+  WK.section({ name: 'today', label: 'Today', render,
+    load: () => Promise.all([WK.timers.load(), WK.routine.load()]),
+    reset(){ WK.timers.reset(); WK.routine.reset(); } });
 
   function greeting(){
     const h = new Date().getHours();
@@ -23,6 +26,7 @@
     const items = plan ? plan.items : [];
     const habits = (plan && plan.habits) || [];
     const done = items.filter(i => i.done).length;
+    const frog = items.find(i => i.frog);
     const necessity = goals.filter(g => g.urgent && g.important);
     const leadership = goals.filter(g => !g.urgent && g.important);
     const wroteToday = entries.some(e => e.kind === 'journal' && e.entry_date === today);
@@ -42,10 +46,13 @@
           ${items.length ? `
             <div class="progress"><i style="width:${Math.round(done / items.length * 100)}%"></i></div>
             <p class="muted small">${done} of ${items.length} done</p>
-            <ul class="mini-list">${items.filter(i => !i.done).slice(0, 5).map(i => `<li>${esc(i.text || '(blank)')} <span class="muted small">${esc(i.block)}</span></li>`).join('') || '<li>All done. Time to review the day.</li>'}</ul>`
+            ${frog ? `<p class="today-frog${frog.done ? ' done' : ''}">🐸 <b>${frog.done ? 'Frog eaten:' : 'Eat the frog first:'}</b> ${esc(frog.text || '(blank)')}</p>` : ''}
+            <ul class="mini-list">${items.filter(i => !i.done && !i.frog).slice(0, 5).map(i => `<li>${esc(i.text || '(blank)')} <span class="muted small">${esc(i.block)}</span></li>`).join('') || '<li>All done. Time to review the day.</li>'}</ul>`
           : '<p class="empty">Nothing planned yet.</p>'}
           <button type="button" class="btn small" data-go="planner">${items.length ? 'Open the planner' : 'Plan the day'}</button>
         </section>
+
+        ${WK.focus.panel()}
 
         ${WK.timers.panel()}
 
@@ -82,6 +89,8 @@
           </ul>
         </section>
 
+        ${WK.routine.panel()}
+
         <section class="panel balance">
           <h2>Balance</h2>
           <p class="muted small">Open goals in each life area.</p>
@@ -110,6 +119,8 @@
       };
     });
     WK.timers.bind(el);
+    WK.focus.bind(el);
+    WK.routine.bind(el);
     $('today-write').onclick = () => WK.openEntry(null, { kind: 'journal', title: prompt });
   }
 })();

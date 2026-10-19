@@ -1,7 +1,9 @@
 /* Planner: one page per day, laid out in the time blocks of the working
    day from the Career notes. A day starts blank or from the routine;
    tasks can come from goals (the next steps in Necessity and Personal
-   Leadership). The evening review can be carried into the Journal. Below
+   Leadership) or from a step in Systems. The 1-3-5 rule: mark a task
+   big, medium or small, and one task as the frog to eat first. The
+   evening review can be carried into the Journal. Below
    the day: Covey's time quadrant (the picture from the 2018 site) and the
    training mega-cycle. */
 (function(){
@@ -33,6 +35,16 @@
     return run;
   };
 
+  // From Systems: put a step in today's plan, once.
+  WK.addToPlan = async text => {
+    const iso = WK.isoDate();
+    if (!plans[iso]) await fetchWeek(iso);
+    const p = plans[iso];
+    if (p.items.some(i => i.text === text)) return;
+    p.items.push({ id: newId(), block: F.OTHER_BLOCK, text, done: false });
+    await save(p, true);
+  };
+
   WK.section({ name: 'planner', label: 'Planner', load, render, reset(){ Object.keys(plans).forEach(k => delete plans[k]); day = WK.isoDate(); } });
 
   function load(){ return fetchWeek(WK.isoDate()); }
@@ -54,17 +66,19 @@
 
   function saveSoon(p){
     clearTimeout(saveTimer);
-    $('plan-status').textContent = 'Saving…';
+    status('Saving…');
     saveTimer = setTimeout(() => save(p), 600);
   }
-  async function save(p){
+  // The status line is there only once the Planner has been drawn.
+  const status = t => { const s = $('plan-status'); if (s) s.textContent = t; };
+  async function save(p, strict){
     const row = { owner_id: WK.user.id, plan_date: p.plan_date, intention: p.intention, items: p.items, review: p.review, updated_at: new Date().toISOString() };
     const { data, error } = await WK.db.from('day_plans').upsert([row], { onConflict: 'owner_id,plan_date' }).select().single();
-    if (error){ $('plan-status').textContent = 'Not saved: ' + error.message; return; }
+    if (error){ status('Not saved: ' + error.message); if (strict) throw error; return; }
     // Keep our own items: the rows on screen point at them, and edits made
     // while this save was out would be lost if the reply replaced them.
     p.id = data.id; p._new = false;
-    if (day === p.plan_date) $('plan-status').textContent = countText(p) + (p.items.length ? ' · ' : '') + 'Saved';
+    if (day === p.plan_date) status(countText(p) + (p.items.length ? ' · ' : '') + 'Saved');
     drawWeek();
   }
 
@@ -106,6 +120,7 @@
       <label class="intention">The one thing that would make this day a success
         <input id="plan-intention" value="${esc(p.intention)}" placeholder="e.g. Finish the sales deck">
       </label>
+      <div class="one35" id="plan-135"></div>
 
       <div class="planner-grid">
         <div class="plan-blocks" id="plan-blocks"></div>
@@ -152,6 +167,7 @@
     };
     drawWeek();
     drawBlocks(p);
+    draw135(p);
     drawGoals(p);
   }
 
@@ -209,6 +225,8 @@
             return `<li data-item="${i.id}" class="${i.done ? 'done' : ''}">
               <input type="checkbox" ${i.done ? 'checked' : ''} aria-label="Done">
               <input class="task-text" value="${esc(i.text)}" aria-label="Task">
+              <button type="button" class="size-btn${i.size ? ' on' : ''}" data-size title="1-3-5: ${esc(SIZES[i.size || ''].title)}">${SIZES[i.size || ''].label}</button>
+              <button type="button" class="frog-btn" data-frog aria-pressed="${!!i.frog}" title="${i.frog ? 'The frog: eat it first' : 'Make this the frog'}">🐸</button>
               ${g ? `<span class="chip goal-chip" title="${esc(g.title)}">${F.catOf(g.category).icon}</span>` : ''}
               <button type="button" class="x" aria-label="Remove task">✕</button></li>`;
           }).join('')}</ul>
@@ -232,14 +250,47 @@
         };
         const txt = li.querySelector('.task-text');
         txt.oninput = () => { it.text = txt.value; saveSoon(p); };
+        li.querySelector('[data-size]').onclick = () => {
+          const order = ['', 'big', 'medium', 'small'];
+          it.size = order[(order.indexOf(it.size || '') + 1) % order.length] || undefined;
+          saveSoon(p); drawBlocks(p); draw135(p);
+        };
+        // One frog a day: marking a task takes the frog off the others.
+        li.querySelector('[data-frog]').onclick = () => {
+          const was = !!it.frog;
+          p.items.forEach(x => { delete x.frog; });
+          if (!was) it.frog = true;
+          saveSoon(p); drawBlocks(p); draw135(p);
+        };
         txt.onkeydown = e => { if (e.key === 'Enter'){ e.preventDefault(); blockEl.querySelector('.add-task').click(); } };
         li.querySelector('.x').onclick = () => { p.items = p.items.filter(x => x !== it); saveSoon(p); drawBlocks(p); updateCounts(p); };
       });
     });
   }
+  // The 1-3-5 rule: 1 big task, 3 medium, 5 small.
+  const SIZES = {
+    '':     { label: '·', title: 'not sized (tap to size)' },
+    big:    { label: '1', title: 'big', max: 1 },
+    medium: { label: '3', title: 'medium', max: 3 },
+    small:  { label: '5', title: 'small', max: 5 }
+  };
+  function draw135(p){
+    const el = $('plan-135');
+    if (!el) return;
+    const frog = p.items.find(i => i.frog);
+    const sized = ['big', 'medium', 'small'].map(k => {
+      const n = p.items.filter(i => i.size === k).length;
+      return `<span class="${n > SIZES[k].max ? 'over' : ''}"><b>${n}/${SIZES[k].max}</b> ${SIZES[k].title}</span>`;
+    }).join('');
+    el.innerHTML = `
+      <span class="one35-frog">${frog ? `🐸 <b>Eat the frog:</b> <span class="${frog.done ? 'done' : ''}">${esc(frog.text || '(blank)')}</span>` : '<span class="muted">🐸 No frog yet. Tap 🐸 on the hardest task and do it first.</span>'}</span>
+      <span class="one35-counts" title="Tap the · next to a task to size it">1-3-5 ${sized}</span>`;
+  }
+
   const countText = p => p.items.length ? p.items.filter(i => i.done).length + ' of ' + p.items.length + ' done' : '';
   function updateCounts(p){
-    $('plan-status').textContent = countText(p);
+    status(countText(p));
+    draw135(p);
     document.querySelectorAll('.plan-block').forEach(el => {
       const mine = p.items.filter(i => i.block === el.dataset.block);
       el.querySelector('.count').textContent = mine.filter(i => i.done).length + '/' + mine.length;
