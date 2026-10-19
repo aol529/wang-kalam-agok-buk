@@ -655,6 +655,16 @@ th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;le
 .frog-btn{opacity:.35;filter:grayscale(1);}
 .frog-btn[aria-pressed="true"]{opacity:1;filter:none;border-color:var(--q-schedule);}
 .frog-btn:hover,.size-btn:hover{opacity:1;border-color:var(--accent);}
+/* Phones: the task gets the full row; its 1-3-5 and frog buttons sit under it. */
+@media (max-width:640px){
+  .tasks li{display:grid;grid-template-columns:18px auto auto 1fr auto;column-gap:8px;row-gap:2px;padding-bottom:6px;}
+  .tasks li input[type=checkbox]{grid-area:1/1;}
+  .tasks li .task-text{grid-area:1/2/2/5;min-width:0;}
+  .tasks li .x{grid-area:1/5;}
+  .tasks li .size-btn{grid-area:2/2;}
+  .tasks li .frog-btn{grid-area:2/3;}
+  .tasks li .goal-chip{grid-area:2/4;justify-self:start;}
+}
 
 .sys-quote{font-family:Fraunces,Georgia,serif;font-style:italic;font-size:20px;margin:0 0 18px;padding:4px 0 4px 16px;border-left:3px solid var(--gold);}
 .sys-quote cite{display:block;font:normal 13px Inter,system-ui,sans-serif;color:var(--muted);margin-top:4px;}
