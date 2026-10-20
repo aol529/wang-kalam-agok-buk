@@ -1,7 +1,9 @@
 /* Core: Supabase, sign-in, the section menu and small helpers. Each
-   section (Today, Vision, Planner, Review, Budget, Journal, Bible, Systems, Blog, Gallery, Legacy) registers itself with
+   section (Today, Vision, Planner, Review, Budget, Journal, Bible, Breathe, Systems, Blog, Gallery, Legacy) registers itself with
    WK.section(); once you are signed in, every section loads its data and
-   the open one draws. */
+   the open one draws. The menu groups the sections into Do, Reflect and
+   Keep: a bar with a sliding pill on wide screens, a dock along the
+   bottom on phones with the rest in a "More" sheet. */
 (function(){
   const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -29,6 +31,14 @@
   const sections = [];   // { name, label, load, render, reset, hide }
   let current = store('wk_section') || 'today';
 
+  // The menu. A section not named here joins the last group.
+  const GROUPS = [
+    { name: 'Do',      items: ['today', 'planner', 'review', 'systems', 'budget'] },
+    { name: 'Reflect', items: ['journal', 'bible', 'breathe'] },
+    { name: 'Keep',    items: ['vision', 'legacy', 'blog', 'gallery'] }
+  ];
+  const DOCK = ['today', 'planner', 'breathe', 'journal'];   // on phones; the rest under More
+
   Object.assign(WK, {
     $, esc, isoDate, parseDate, addDays, fmtDate, toast, store,
     db: null, user: null,
@@ -39,7 +49,7 @@
       if (leaving && leaving.hide) leaving.hide();
       current = name;
       store('wk_section', name);
-      document.querySelectorAll('#nav [data-section]').forEach(b => b.setAttribute('aria-current', b.dataset.section === name ? 'page' : 'false'));
+      markNav();
       sections.forEach(s => { $('section-' + s.name).hidden = s.name !== name; });
       const s = sections.find(x => x.name === name);
       if (s && s.render) s.render();
@@ -49,10 +59,61 @@
     refresh(){ const s = sections.find(x => x.name === current); if (s && s.render) s.render(); }
   });
 
+  function groups(){
+    const named = GROUPS.flatMap(g => g.items);
+    const list = GROUPS.map(g => ({ name: g.name, items: g.items.map(n => sections.find(s => s.name === n)).filter(Boolean) }));
+    list[list.length - 1].items.push(...sections.filter(s => !named.includes(s.name)));
+    return list;
+  }
+  const navBtn = (s, cls) => `<button type="button" class="${cls}" data-section="${s.name}" title="${esc(s.label)}">${WK.icon(s.name)}<span class="nav-label">${esc(s.label)}</span></button>`;
+
+  function buildNav(){
+    const gs = groups();
+    $('nav').innerHTML = '<span class="nav-pill" aria-hidden="true"></span>' + gs.map(g => `
+      <div class="nav-group" role="group" aria-label="${esc(g.name)}">${g.items.map(s => navBtn(s, 'nav-btn')).join('')}</div>`).join('');
+    $('dock').innerHTML = DOCK.map(n => sections.find(s => s.name === n)).filter(Boolean).map(s => navBtn(s, 'dock-btn')).join('') +
+      `<button type="button" class="dock-btn" id="dock-more" aria-haspopup="dialog">${WK.icon('more')}<span class="nav-label">More</span></button>`;
+    $('nav-sheet').innerHTML = `
+      <div class="sheet-head"><b>Wang' Kalam Agok Buk</b><button type="button" class="sheet-close" aria-label="Close">${WK.icon('close')}</button></div>
+      ${gs.map(g => `<p class="sheet-group">${esc(g.name)}</p><div class="sheet-grid">${g.items.map(s => navBtn(s, 'sheet-btn')).join('')}</div>`).join('')}
+      <div class="sheet-foot"><button type="button" class="btn ghost small" data-click="account-open">Account</button><button type="button" class="btn ghost small" data-click="sign-out">Sign out</button></div>`;
+    // On phones the header's Account and Sign out live here.
+    $('nav-sheet').querySelectorAll('[data-click]').forEach(b => { b.onclick = () => { $('nav-sheet').close(); $(b.dataset.click).click(); }; });
+    document.querySelectorAll('[data-section]').forEach(b => { if (b.closest('#nav, #dock, #nav-sheet')) b.onclick = () => WK.show(b.dataset.section); });
+    const sheet = $('nav-sheet');
+    $('dock-more').onclick = () => sheet.showModal();
+    sheet.querySelector('.sheet-close').onclick = () => sheet.close();
+    sheet.onclick = e => { if (e.target === sheet) sheet.close(); };   // the backdrop
+    window.addEventListener('resize', movePill);
+    if (document.fonts) document.fonts.ready.then(movePill);
+  }
+
+  // The current section in all three menus; the pill slides under it.
+  function markNav(){
+    document.querySelectorAll('#nav [data-section], #dock [data-section], #nav-sheet [data-section]')
+      .forEach(b => b.setAttribute('aria-current', b.dataset.section === current ? 'page' : 'false'));
+    const more = $('dock-more');
+    if (more){
+      const inDock = DOCK.includes(current), s = sections.find(x => x.name === current);
+      more.setAttribute('aria-current', inDock ? 'false' : 'page');
+      more.innerHTML = inDock || !s ? `${WK.icon('more')}<span class="nav-label">More</span>` : `${WK.icon(s.name)}<span class="nav-label">${esc(s.label)}</span>`;
+    }
+    const sheet = $('nav-sheet');
+    if (sheet && sheet.open) sheet.close();
+    movePill();
+  }
+  function movePill(){
+    const nav = $('nav'), pill = nav && nav.querySelector('.nav-pill');
+    const b = pill && nav.querySelector('.nav-btn[aria-current="page"]');
+    if (!b || !b.offsetWidth){ if (pill) pill.style.opacity = 0; return; }
+    Object.assign(pill.style, { opacity: 1, width: b.offsetWidth + 'px', height: b.offsetHeight + 'px', transform: `translate(${b.offsetLeft}px, ${b.offsetTop}px)` });
+    // Placed once without sliding in from the corner, then it slides.
+    if (!nav.classList.contains('pill-ready')) requestAnimationFrame(() => nav.classList.add('pill-ready'));
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     $('affirmation').textContent = WK.F.AFFIRMATION;
-    $('nav').innerHTML = sections.map(s => `<button type="button" data-section="${s.name}">${esc(s.label)}</button>`).join('');
-    $('nav').querySelectorAll('[data-section]').forEach(b => { b.onclick = () => WK.show(b.dataset.section); });
+    buildNav();
 
     const cfg = window.VB_CONFIG || {};
     if (!cfg.supabaseUrl || /YOUR-/.test(cfg.supabaseUrl + cfg.supabaseAnonKey)){

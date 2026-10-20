@@ -10,10 +10,13 @@ inheritance of advice for my children. Static HTML/CSS/JS backed by Supabase.
 - **Budget**: the notebook page as four boxes: urgent + necessary, urgent − necessary, −urgent + necessary, −urgent − necessary (Covey's Necessity, Deception, Personal Leadership, Waste). Amounts in KES, monthly items ticked off month by month, one-offs once, with totals of what is paid and still to pay.
 - **Journal**: dated entries with mood, gratitude and life areas; any entry can be kept "for my children". The Stoic review starts a morning or evening entry from its questions, and "Blog it" turns an entry into a blog post.
 - **Bible**: prayers and affirmations from "All I Want" (2014), then the Daily Bible Reading Plan (from github.com/aol529/bible-reading-plan) built into the tab: five plans, verse search, ticks and read-aloud.
+- **Breathe**: guided breathing for meditation. Box breathing, 4-7-8, coherent breathing, the physiological sigh, the ten conscious breaths from the 2014 list, and Ānāpānasati (counting the out-breath). A circle grows and shrinks with the breath, with a count, a ring for the session, a soft tone and a buzz on phones. A finished session can tick "Meditate" on Today. Leaving the tab ends the session.
 - **Systems**: six cheat sheets (burnout, memory, home, home routine, groceries, cooking) as action lists you tick off (ticks stay, so each card fills up as the system is set up), each read through the Four Laws of *Atomic Habits*; "+ Today" puts a step in today's plan, and "Things that make it easier" tick as you get them. The not-to-do list is Vision's Deception and Waste quadrants.
 - **Blog**: posts in the seven life areas (or any category you add), draft or published. View reads them like a blog; Edit writes and manages them.
 - **Gallery**: pictures with captions, categories and dates. View shows them as a wall; Edit adds, changes and deletes them. Blog covers come from here.
 - **Legacy**: The Way (the life path explained), letters to open later, and the journal entries kept for the children. Prints as a book. "Download the archive" saves everything as one ZIP that needs no internet: book.html (The Way, letters, journal, vision, blog and photos, printable to PDF), the same writing as .md files, the photos, and every table as JSON to restore from. Keep a copy on a drive once a year.
+
+The menu groups the sections into **Do** (Today, Planner, Review, Systems, Budget), **Reflect** (Journal, Bible, Breathe) and **Keep** (Vision, Legacy, Blog, Gallery). On phones it is a dock along the bottom, with the rest, Account and Sign out under More. Icons are Lucide (ISC licence), inlined in `js/icons.js`.
 
 The life path itself (areas, levels, virtues, quadrants, routine, prompts) lives in `js/framework.js`.
 
