@@ -763,3 +763,8 @@ th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;le
   body.printing-legacy .entry-full{display:block;}
   body.printing-legacy main{padding:0;max-width:none;}
 }
+.sys-card .progress{margin:0 0 6px;}
+.sys-steps .check{align-items:flex-start;font-size:14px;flex:1;}
+.sys-steps .check input,.sys-have input{margin-top:3px;flex:none;}
+.sys-steps input:checked + span{color:var(--muted);text-decoration:line-through;}
+.sys-have{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
