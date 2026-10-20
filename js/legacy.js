@@ -1,6 +1,7 @@
 /* Legacy: what is meant to be handed down. The Way (the life path table
    explained), Letters to the children, and the journal entries marked
-   "for my children". "Print as a book" prints all three. */
+   "for my children". "Print as a book" prints all three; "Download the
+   archive" saves everything in the app as a ZIP to keep offline (export.js). */
 (function(){
   const { $, esc } = WK;
   const F = WK.F;
@@ -8,6 +9,8 @@
   let tab = WK.store('wk_legacy_tab') || 'way';
 
   WK.section({ name: 'legacy', label: 'Legacy', render });
+  // The archive's book opens with The Way.
+  WK.legacyWay = () => wayHtml();
 
   function render(){
     const el = $('section-legacy');
@@ -21,8 +24,12 @@
           <span class="eyebrow">For my children</span>
           <h1>Wang' Kalam Agok Buk</h1>
         </div>
-        <button type="button" class="btn" id="legacy-print">Print as a book</button>
+        <div class="legacy-actions">
+          <button type="button" class="btn" id="legacy-print">Print as a book</button>
+          <button type="button" class="btn primary" id="legacy-export">Download the archive</button>
+        </div>
       </div>
+      <p class="muted small legacy-export-note no-print" id="legacy-export-note">${exportNote()}</p>
       <nav class="subtabs" id="legacy-tabs">
         <button type="button" data-tab="way">The Way</button>
         <button type="button" data-tab="letters">Letters <span class="count">${letters.length}</span></button>
@@ -50,6 +57,17 @@
     if ($('letter-new')) $('letter-new').onclick = () => WK.openEntry(null, { kind: 'letter' });
     WK.wireEntries(el);
 
+    $('legacy-export').onclick = async () => {
+      const b = $('legacy-export'), note = $('legacy-export-note');
+      b.disabled = true;
+      try {
+        const r = await WK.exportArchive(t => { b.textContent = t; });
+        WK.toast(`Saved: ${r.entries} entries and letters, ${r.photos} photos (${(r.size / 1048576).toFixed(1)} MB).`);
+        note.textContent = exportNote() + (r.failed ? ` ${r.failed} photo${r.failed === 1 ? '' : 's'} could not be downloaded.` : '');
+      } catch (err){ WK.toast('Not saved: ' + err.message); }
+      b.disabled = false; b.textContent = 'Download the archive';
+    };
+
     // Print every pane, open or not, then put the tabs back.
     $('legacy-print').onclick = () => {
       document.body.classList.add('printing-legacy');
@@ -58,6 +76,13 @@
       window.addEventListener('afterprint', done);
       window.print();
     };
+  }
+
+  // Remembered on this device only.
+  function exportNote(){
+    const last = WK.store('wk_last_export');
+    return 'The archive is everything here (the book, the letters, the journal, photos and a full data backup) in one ZIP that opens without the internet. ' +
+      (last ? `Last downloaded on this device ${WK.fmtDate(last)}.` : 'Download it once a year and keep it on a drive.');
   }
 
   function lettersHtml(letters){

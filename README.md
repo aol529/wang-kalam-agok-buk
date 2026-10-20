@@ -13,7 +13,7 @@ inheritance of advice for my children. Static HTML/CSS/JS backed by Supabase.
 - **Systems**: six cheat sheets (burnout, memory, home, home routine, groceries, cooking) as action lists you tick off (ticks stay, so each card fills up as the system is set up), each read through the Four Laws of *Atomic Habits*; "+ Today" puts a step in today's plan, and "Things that make it easier" tick as you get them. The not-to-do list is Vision's Deception and Waste quadrants.
 - **Blog**: posts in the seven life areas (or any category you add), draft or published. View reads them like a blog; Edit writes and manages them.
 - **Gallery**: pictures with captions, categories and dates. View shows them as a wall; Edit adds, changes and deletes them. Blog covers come from here.
-- **Legacy**: The Way (the life path explained), letters to open later, and the journal entries kept for the children. Prints as a book.
+- **Legacy**: The Way (the life path explained), letters to open later, and the journal entries kept for the children. Prints as a book. "Download the archive" saves everything as one ZIP that needs no internet: book.html (The Way, letters, journal, vision, blog and photos, printable to PDF), the same writing as .md files, the photos, and every table as JSON to restore from. Keep a copy on a drive once a year.
 
 The life path itself (areas, levels, virtues, quadrants, routine, prompts) lives in `js/framework.js`.
 

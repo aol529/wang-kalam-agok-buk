@@ -791,3 +791,7 @@ th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;le
 .review-rock{display:flex;gap:8px;}
 .review-rock input{flex:1;min-width:0;}
 .review-write .btn.primary{margin-bottom:4px;}
+
+/* The archive */
+.legacy-actions{display:flex;flex-wrap:wrap;gap:8px;}
+.legacy-export-note{margin:-6px 0 14px;}
