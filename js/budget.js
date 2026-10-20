@@ -13,6 +13,8 @@
   const saveTimers = {};
 
   WK.section({ name: 'budget', label: 'Budget', load, render, reset(){ items = []; missing = false; } });
+  // Read by Review.
+  WK.budgetItems = () => items;
 
   // The boxes in the notebook's order: top row urgent, bottom row not;
   // left column necessary, right column not.

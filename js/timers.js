@@ -161,4 +161,6 @@
   });
 
   WK.timers = { load, panel, bind, reset(){ timers = []; missing = false; } };
+  // Read by Review.
+  WK.timerList = () => timers;
 })();

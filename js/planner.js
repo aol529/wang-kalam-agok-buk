@@ -35,15 +35,19 @@
     return run;
   };
 
-  // From Systems: put a step in today's plan, once.
-  WK.addToPlan = async text => {
-    const iso = WK.isoDate();
+  // From Systems: put a step in today's plan, once. From Review: next
+  // week's big rock on Monday, with extra { frog, size }.
+  WK.addToPlan = async (text, iso, extra) => {
+    iso = iso || WK.isoDate();
     if (!plans[iso]) await fetchWeek(iso);
     const p = plans[iso];
     if (p.items.some(i => i.text === text)) return;
-    p.items.push({ id: newId(), block: F.OTHER_BLOCK, text, done: false });
+    if (extra && extra.frog) p.items.forEach(x => { delete x.frog; });
+    p.items.push(Object.assign({ id: newId(), block: F.OTHER_BLOCK, text, done: false }, extra));
     await save(p, true);
   };
+  // From Review: open the Planner on a day (shown next).
+  WK.planGo = iso => { day = iso; if (!plans[iso]) fetchWeek(iso).then(() => WK.refresh(), err => WK.toast('Could not load: ' + err.message)); };
 
   WK.section({ name: 'planner', label: 'Planner', load, render, reset(){ Object.keys(plans).forEach(k => delete plans[k]); day = WK.isoDate(); } });
 

@@ -768,3 +768,26 @@ th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;le
 .sys-steps .check input,.sys-have input{margin-top:3px;flex:none;}
 .sys-steps input:checked + span{color:var(--muted);text-decoration:line-through;}
 .sys-have{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));}
+
+/* Review */
+.review-table{width:100%;border-collapse:collapse;font-size:13.5px;}
+.review-table th,.review-table td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:center;}
+.review-table thead th{font-size:12px;color:var(--muted);font-weight:600;}
+.review-table tbody th{text-align:left;white-space:nowrap;}
+.review-table tr.is-today th .link{font-weight:700;}
+.review-table tr.is-future{opacity:.5;}
+.habit-grid{list-style:none;margin:0;padding:0;display:grid;gap:3px;}
+.habit-grid li{display:grid;grid-template-columns:minmax(0,1fr) repeat(7,16px);align-items:center;gap:5px;font-size:13px;padding:2px 4px;border-radius:6px;}
+.habit-grid li span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.habit-grid .habit-head b{font-size:11px;color:var(--muted);text-align:center;font-weight:600;}
+.habit-grid li.twice{box-shadow:inset 3px 0 0 var(--danger);}
+.habit-grid li.twice span{color:var(--danger);}
+.mark{width:12px;height:12px;border-radius:50%;justify-self:center;border:2px solid var(--line);}
+.mark.hit{background:var(--accent);border-color:var(--accent);}
+.mark.miss{border-color:var(--danger);}
+.review-sub{font-size:14px;margin:12px 0 4px;}
+.review-grateful{margin:0;padding-left:18px;font-size:13.5px;}
+.review-bad{color:var(--danger);}
+.review-rock{display:flex;gap:8px;}
+.review-rock input{flex:1;min-width:0;}
+.review-write .btn.primary{margin-bottom:4px;}

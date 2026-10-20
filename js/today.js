@@ -2,8 +2,8 @@
    steps in Personal Leadership, the journal prompt, entries from this day
    in past years, how the seven life areas are covered, the "Have a
    clear conscience" checklist from 2014, the Days without timers
-   (timers.js), the focus timer (focus.js) and the Minimum Home Routine
-   (routine.js). */
+   (timers.js), the focus timer (focus.js), the Minimum Home Routine
+   (routine.js), and on Sundays a nudge to the weekly review (review.js). */
 (function(){
   const { $, esc } = WK;
   const F = WK.F;
@@ -51,6 +51,13 @@
           : '<p class="empty">Nothing planned yet.</p>'}
           <button type="button" class="btn small" data-go="planner">${items.length ? 'Open the planner' : 'Plan the day'}</button>
         </section>
+
+        ${new Date().getDay() === 0 ? `
+        <section class="panel">
+          <h2>Weekly review <span class="muted small">Sunday</span></h2>
+          <p class="small">Look back on the week, find what you missed twice, and set next week’s big rock.</p>
+          <button type="button" class="btn small primary" data-go="review">Review the week</button>
+        </section>` : ''}
 
         ${WK.focus.panel()}
 
