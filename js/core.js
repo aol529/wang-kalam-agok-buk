@@ -28,8 +28,9 @@
     return null;
   }
 
-  const sections = [];   // { name, label, load, render, reset, hide }
+  const sections = [];   // { name, label, icon, load, render, reset, hide }
   let current = store('wk_section') || 'today';
+  const wanted = current;   // a page section may arrive after the first draw
 
   // The menu. A section not named here joins the last group.
   const GROUPS = [
@@ -38,13 +39,45 @@
     { name: 'Keep',    items: ['vision', 'legacy', 'blog', 'gallery'] }
   ];
   const DOCK = ['today', 'planner', 'breathe', 'journal'];   // on phones; the rest under More
+  // Your own menu from the CMS: { groups: [{ name, items }], hidden: [names] }.
+  let menu = null;
+  const ALWAYS = ['today', 'cms'];   // never hidden, so you can't lock yourself out
+
 
   Object.assign(WK, {
     $, esc, isoDate, parseDate, addDays, fmtDate, toast, store,
     db: null, user: null,
     section(def){ sections.push(def); },
+    // Sections that come and go while the site runs (your pages).
+    addSection(def){
+      const at = sections.findIndex(s => s.name === def.name);
+      if (at >= 0) sections[at] = def; else sections.push(def);
+      if (!$('section-' + def.name)){
+        const el = document.createElement('section');
+        el.id = 'section-' + def.name; el.className = 'section'; el.hidden = true;
+        document.querySelector('#app main').appendChild(el);
+      }
+      buildNav();
+      if (def.name === current) def.render && def.render();
+      else if (def.name === wanted && current === 'today') WK.show(wanted);
+    },
+    removeSection(name){
+      const at = sections.findIndex(s => s.name === name);
+      if (at < 0) return;
+      sections.splice(at, 1);
+      const el = $('section-' + name);
+      if (el) el.remove();
+      buildNav();
+      if (current === name) WK.show('today');
+    },
+    sections: () => sections.slice(),
+    // From the CMS: your own menu, or null for the original.
+    setMenu(m){ menu = m; buildNav(); },
+    menuGroups: () => groups(),
+    isHidden: name => !!(menu && (menu.hidden || []).includes(name)) && !ALWAYS.includes(name),
     show(name){
       if (!sections.some(s => s.name === name)) name = 'today';
+      if (!$('section-' + name)) return;
       const leaving = name !== current && sections.find(s => s.name === current);
       if (leaving && leaving.hide) leaving.hide();
       current = name;
@@ -59,19 +92,36 @@
     refresh(){ const s = sections.find(x => x.name === current); if (s && s.render) s.render(); }
   });
 
-  function groups(){
-    const named = GROUPS.flatMap(g => g.items);
-    const list = GROUPS.map(g => ({ name: g.name, items: g.items.map(n => sections.find(s => s.name === n)).filter(Boolean) }));
-    list[list.length - 1].items.push(...sections.filter(s => !named.includes(s.name)));
-    return list;
+  // The menu as groups of sections: yours from the CMS, or the original.
+  // A section that names its own group (a page) goes there; any other
+  // section not placed joins the last group. Hidden ones are left out
+  // unless `all`.
+  function groups(all){
+    const base = menu && menu.groups && menu.groups.length ? menu.groups : GROUPS;
+    const list = base.map(g => ({ name: g.name, items: [] }));
+    const placed = new Set();
+    base.forEach((g, i) => g.items.forEach(n => {
+      const s = sections.find(x => x.name === n);
+      if (s && !placed.has(n)){ list[i].items.push(s); placed.add(n); }
+    }));
+    sections.filter(s => !placed.has(s.name)).forEach(s => {
+      const g = (s.group && list.find(x => x.name === s.group)) || list[list.length - 1];
+      g.items.push(s);
+    });
+    if (!all) list.forEach(g => { g.items = g.items.filter(s => !WK.isHidden(s.name) && !s.offMenu); });
+    return list.filter(g => all || g.items.length);
   }
-  const navBtn = (s, cls) => `<button type="button" class="${cls}" data-section="${s.name}" title="${esc(s.label)}">${WK.icon(s.name)}<span class="nav-label">${esc(s.label)}</span></button>`;
+  const navBtn = (s, cls) => `<button type="button" class="${cls}" data-section="${s.name}" title="${esc(s.label)}">${WK.icon(s.icon || s.name)}<span class="nav-label">${esc(s.label)}</span></button>`;
 
+  let navWired = false;
   function buildNav(){
+    if (!$('nav')) return;
     const gs = groups();
+    // A rebuilt menu puts its pill in place without sliding in from the corner.
+    $('nav').classList.remove('pill-ready');
     $('nav').innerHTML = '<span class="nav-pill" aria-hidden="true"></span>' + gs.map(g => `
       <div class="nav-group" role="group" aria-label="${esc(g.name)}">${g.items.map(s => navBtn(s, 'nav-btn')).join('')}</div>`).join('');
-    $('dock').innerHTML = DOCK.map(n => sections.find(s => s.name === n)).filter(Boolean).map(s => navBtn(s, 'dock-btn')).join('') +
+    $('dock').innerHTML = DOCK.map(n => sections.find(s => s.name === n)).filter(s => s && !WK.isHidden(s.name)).map(s => navBtn(s, 'dock-btn')).join('') +
       `<button type="button" class="dock-btn" id="dock-more" aria-haspopup="dialog">${WK.icon('more')}<span class="nav-label">More</span></button>`;
     $('nav-sheet').innerHTML = `
       <div class="sheet-head"><b>Wang' Kalam Agok Buk</b><button type="button" class="sheet-close" aria-label="Close">${WK.icon('close')}</button></div>
@@ -84,8 +134,12 @@
     $('dock-more').onclick = () => sheet.showModal();
     sheet.querySelector('.sheet-close').onclick = () => sheet.close();
     sheet.onclick = e => { if (e.target === sheet) sheet.close(); };   // the backdrop
-    window.addEventListener('resize', movePill);
-    if (document.fonts) document.fonts.ready.then(movePill);
+    if (!navWired){
+      navWired = true;
+      window.addEventListener('resize', movePill);
+      if (document.fonts) document.fonts.ready.then(movePill);
+    }
+    markNav();
   }
 
   // The current section in all three menus; the pill slides under it.
@@ -96,7 +150,7 @@
     if (more){
       const inDock = DOCK.includes(current), s = sections.find(x => x.name === current);
       more.setAttribute('aria-current', inDock ? 'false' : 'page');
-      more.innerHTML = inDock || !s ? `${WK.icon('more')}<span class="nav-label">More</span>` : `${WK.icon(s.name)}<span class="nav-label">${esc(s.label)}</span>`;
+      more.innerHTML = inDock || !s ? `${WK.icon('more')}<span class="nav-label">More</span>` : `${WK.icon(s.icon || s.name)}<span class="nav-label">${esc(s.label)}</span>`;
     }
     const sheet = $('nav-sheet');
     if (sheet && sheet.open) sheet.close();

@@ -7,7 +7,7 @@
   const { esc } = WK;
   const F = WK.F;
 
-  const TABLES = ['goals', 'journal_entries', 'day_plans', 'routine_ticks', 'quit_timers', 'gallery_items', 'blog_posts', 'budget_items'];
+  const TABLES = ['goals', 'journal_entries', 'day_plans', 'routine_ticks', 'quit_timers', 'gallery_items', 'blog_posts', 'budget_items', 'pages', 'site_content'];
   const PAGE = 1000;          // Supabase returns at most this many rows a request
 
   // Every row of a table, a page at a time. A table that isn't set up yet is empty.
@@ -52,6 +52,17 @@
       (g.next_step ? `\n  Next step: ${g.next_step}` : '') + (g.notes ? `\n  ${g.notes.trim().replace(/\n/g, '\n  ')}` : '');
   }
 
+  function pageMd(p){
+    const out = (p.blocks || []).map(b =>
+      b.type === 'heading' ? '### ' + b.text :
+      b.type === 'text' ? (b.md || '').trim() :
+      b.type === 'checklist' ? (b.items || []).map(i => `- [${i.done ? 'x' : ' '}] ${i.text}`).join('\n') :
+      b.type === 'quote' ? `> ${b.text}${b.by ? '\n> — ' + b.by : ''}` :
+      b.type === 'image' ? `(picture${b.caption ? ': ' + b.caption : ''})` :
+      b.type === 'divider' ? '---' : '').filter(Boolean);
+    return `## ${p.title || 'Untitled'}\n\n${out.join('\n\n')}\n\n`;
+  }
+
   // ---- The book ----
   function book(d, css, photos){
     const letters = d.journal_entries.filter(e => e.kind === 'letter').sort(byDate('entry_date'));
@@ -88,7 +99,7 @@ body{padding:24px 16px;}
 <body><main class="bk">
   <header class="legacy-head"><div><span class="eyebrow">For my children</span><h1>Wang' Kalam Agok Buk</h1>
     <p class="muted">Kept until ${esc(fmt(today))}. Open this file in any web browser; print it to keep it on paper.</p></div></header>
-  <nav class="bk-toc small"><a href="#way">The Way</a> · <a href="#letters">Letters</a> · <a href="#lessons">From the Journal</a> · <a href="#vision">Vision</a> · <a href="#journal">The whole journal</a> · <a href="#blog">Blog</a>${photos.length ? ' · <a href="#photos">Photos</a>' : ''}</nav>
+  <nav class="bk-toc small"><a href="#way">The Way</a> · <a href="#letters">Letters</a> · <a href="#lessons">From the Journal</a> · <a href="#vision">Vision</a> · ${d.pages.length ? '<a href="#pages">Pages</a> · ' : ''}<a href="#journal">The whole journal</a> · <a href="#blog">Blog</a>${photos.length ? ' · <a href="#photos">Photos</a>' : ''}</nav>
 
   <section class="bk-part" id="way">${WK.legacyWay()}</section>
 
@@ -112,6 +123,9 @@ body{padding:24px 16px;}
       return gs.length ? `<h3>${c.icon} ${esc(c.name)}</h3><ul>${gs.map(g => `<li><b>${esc(g.title)}</b>${g.done ? ' ✓' : ''} <span class="muted small">${esc(F.quadOf(g).name)}${g.target_date ? ' · by ' + esc(fmt(g.target_date)) : ''}</span>${g.next_step ? `<br><span class="small">Next step: ${esc(g.next_step)}</span>` : ''}${g.notes ? `<br><span class="small">${esc(g.notes)}</span>` : ''}</li>`).join('')}</ul>` : '';
     }).join('') || '<p class="empty">No goals yet.</p>'}
   </section>
+
+  ${d.pages.length ? `<section class="bk-part" id="pages"><h2>Pages</h2>${d.pages.slice().sort((a, b) => a.sort - b.sort).map(p => `
+    <article class="bk-entry pg"><h3>${esc(p.title || 'Untitled')}</h3>${WK.blocksHtml(p.blocks, { img: b => (photos.find(x => x.id === b.gallery_id) || {}).file || '' })}</article>`).join('')}</section>` : ''}
 
   <section class="bk-part" id="journal"><h2>The whole journal</h2>
     ${journal.map(entryHtml).join('') || '<p class="empty">No entries yet.</p>'}
@@ -139,6 +153,7 @@ letters.md    The letters to my children, as plain text.
 journal.md    Every journal entry, oldest first.
 vision.md     The goals on the Vision board, by life area.
 blog.md       The published blog posts.
+pages.md      The pages built in the CMS.
 photos/       The pictures from the Gallery and the Vision board.
 data/         Every table as JSON, exactly as stored, to restore the
               site from if it is ever lost.
@@ -159,7 +174,7 @@ Keep a copy somewhere that isn't the internet: a drive, a USB stick, paper.
 
     // Pictures: the gallery, then the vision board's own uploads.
     const photos = [];
-    const pics = d.gallery_items.slice().sort(byDate('taken_on')).map(i => ({ bucket: 'gallery', path: i.path, caption: i.caption, date: i.taken_on }))
+    const pics = d.gallery_items.slice().sort(byDate('taken_on')).map(i => ({ id: i.id, bucket: 'gallery', path: i.path, caption: i.caption, date: i.taken_on }))
       .concat(d.goals.filter(g => g.image_path).map(g => ({ bucket: 'vision-images', path: g.image_path, caption: g.title, date: '' })));
     let n = 0, failed = 0;
     for (const p of pics){
@@ -175,6 +190,7 @@ Keep a copy somewhere that isn't the internet: a drive, a USB stick, paper.
     say('Writing the book…');
     const css = await fetch('css/site.css').then(r => r.ok ? r.text() : '').catch(() => '');
     root.file('book.html', book(d, css, photos.filter(p => p.bucket === 'gallery')));
+    root.file('pages.md', '# Pages\n\n' + d.pages.slice().sort((a, b) => a.sort - b.sort).map(pageMd).join(''));
     const letters = d.journal_entries.filter(e => e.kind === 'letter').sort(byDate('entry_date'));
     const journal = d.journal_entries.filter(e => e.kind === 'journal').sort(byDate('entry_date'));
     root.file('letters.md', '# Letters to my children\n\n' + (letters.map(letterMd).join('') || '(none yet)\n'));

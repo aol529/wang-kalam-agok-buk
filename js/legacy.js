@@ -106,6 +106,21 @@
       </div>`;
   }
 
+  // The prose of The Way: a lead and titled panels in Markdown. The CMS
+  // can replace them (content.js); the table, the Stoic review, the
+  // quadrants and the 2014 words are drawn from their own data.
+  const WAY = WK.WAY = {
+    lead: 'One table joins old wisdom with modern ideas. It sees a life in three parts (body, mind and spirit) and asks the same questions of each: what does it need, which virtue guards it, and which part of life does it show up in?',
+    sections: [
+      { title: 'Body, mind and spirit', body: '**Body:** food, water, air, warmth, shelter, strength and money. Everything else stands on it, so look after it first. It shows up in health, wealth and free time.\n\n**Mind:** the people you belong to and the respect you earn by leading. It shows up in love and relationships, and in community and charity.\n\n**Spirit:** becoming who you are meant to be, and giving beyond yourself. It shows up in personal development and in your life\'s work.' },
+      { title: 'Buddhism: the Three Jewels', body: 'The **Buddha** is the example of an awakened mind. The **Dharma** is the teaching, the truth of how things are. The **Sangha** is the community that walks the path together.\n\nIn the table, the Dharma guides the spirit, the Buddha\'s example guides the mind, and the Sangha (your people, your tribe) keeps the body\'s daily life steady.' },
+      { title: 'Daoism: the Three Treasures', body: 'Laozi kept three treasures: **compassion**, **frugality** and **humility**. Compassion makes you brave. Frugality makes you able to give. Humility, not pushing to be first, is what makes people follow you.\n\nHumility for the spirit, compassion for the mind, frugality for the body.' },
+      { title: 'Stoicism: the four virtues', body: '**Wisdom** (prudentia), **justice**, **courage** (fortitude) and **temperance** (self-control). The table pairs them with the three appeals: **logos** (reason), **ethos** (character) and **pathos** (feeling).\n\nReason and wisdom lead the spirit. Justice and courage shape your character. Temperance keeps the body\'s appetites in check.' },
+      { title: 'The hierarchy of needs', body: 'Abraham Maslow saw needs as a pyramid: the body\'s needs, then safety, belonging, esteem and, at the top, becoming all you can be. The lower ones must be steady before the higher ones can hold your attention.\n\nBuild from the base. Don\'t chase the top of the pyramid with the bottom falling away.' },
+      { title: 'Seven areas, four archetypes', body: 'Jack Canfield\'s advice is to set goals in every area of life so that none is left behind: Personal Development, Career, Community & Charity, Love & Relationships, Wealth & Finance, Health & Appearance, Recreation.\n\nRobert Moore and Douglas Gillette describe four mature energies. The **King** brings order and vision (personal development). The **Warrior** brings discipline and action (career). The **Magician** brings knowledge and skill (community). The **Lover** brings feeling and connection (love).' }
+    ]
+  };
+
   // The life path, explained.
   function wayHtml(){
     const rows = [
@@ -116,7 +131,7 @@
     const areaTag = a => { const c = F.catOf(a); return `<span class="area-tag">${c.icon} ${esc(a)}${c.archetype ? ` <em>${esc(c.archetype)}</em>` : ''}</span>`; };
     return `
       <h2 class="print-title">The Way</h2>
-      <p class="lead way-lead">One table joins old wisdom with modern ideas. It sees a life in three parts (body, mind and spirit) and asks the same questions of each: what does it need, which virtue guards it, and which part of life does it show up in?</p>
+      <div class="lead way-lead">${WK.md(WAY.lead)}</div>
 
       <div class="lifepath">
         <div class="lp-head"><span></span><span>Buddhism</span><span>Daoism</span><span>Stoicism</span><span>Hierarchy of needs</span><span>Life areas</span></div>
@@ -133,47 +148,16 @@
       </div>
 
       <div class="way-grid">
+        ${WAY.sections.map(w => `
         <section class="panel">
-          <h2>Body, mind and spirit</h2>
-          <p><b>Body:</b> food, water, air, warmth, shelter, strength and money. Everything else stands on it, so look after it first. It shows up in health, wealth and free time.</p>
-          <p><b>Mind:</b> the people you belong to and the respect you earn by leading. It shows up in love and relationships, and in community and charity.</p>
-          <p><b>Spirit:</b> becoming who you are meant to be, and giving beyond yourself. It shows up in personal development and in your life's work.</p>
-        </section>
-
-        <section class="panel">
-          <h2>Buddhism: the Three Jewels</h2>
-          <p>The <b>Buddha</b> is the example of an awakened mind. The <b>Dharma</b> is the teaching, the truth of how things are. The <b>Sangha</b> is the community that walks the path together.</p>
-          <p>In the table, the Dharma guides the spirit, the Buddha's example guides the mind, and the Sangha (your people, your tribe) keeps the body's daily life steady.</p>
-        </section>
-
-        <section class="panel">
-          <h2>Daoism: the Three Treasures</h2>
-          <p>Laozi kept three treasures: <b>compassion</b>, <b>frugality</b> and <b>humility</b>. Compassion makes you brave. Frugality makes you able to give. Humility, not pushing to be first, is what makes people follow you.</p>
-          <p>Humility for the spirit, compassion for the mind, frugality for the body.</p>
-        </section>
-
-        <section class="panel">
-          <h2>Stoicism: the four virtues</h2>
-          <p><b>Wisdom</b> (prudentia), <b>justice</b>, <b>courage</b> (fortitude) and <b>temperance</b> (self-control). The table pairs them with the three appeals: <b>logos</b> (reason), <b>ethos</b> (character) and <b>pathos</b> (feeling).</p>
-          <p>Reason and wisdom lead the spirit. Justice and courage shape your character. Temperance keeps the body's appetites in check.</p>
-        </section>
+          <h2>${esc(w.title)}</h2>
+          ${WK.md(w.body)}
+        </section>`).join('')}
 
         <section class="panel wide">
           <h2>Stoicism: the daily review</h2>
           <div class="stoic-text">${WK.stoicText()}
           </div>
-        </section>
-
-        <section class="panel">
-          <h2>The hierarchy of needs</h2>
-          <p>Abraham Maslow saw needs as a pyramid: the body's needs, then safety, belonging, esteem and, at the top, becoming all you can be. The lower ones must be steady before the higher ones can hold your attention.</p>
-          <p>Build from the base. Don't chase the top of the pyramid with the bottom falling away.</p>
-        </section>
-
-        <section class="panel">
-          <h2>Seven areas, four archetypes</h2>
-          <p>Jack Canfield's advice is to set goals in every area of life so that none is left behind: ${F.CATEGORIES.map(c => esc(c.name)).join(', ')}.</p>
-          <p>Robert Moore and Douglas Gillette describe four mature energies. The <b>King</b> brings order and vision (personal development). The <b>Warrior</b> brings discipline and action (career). The <b>Magician</b> brings knowledge and skill (community). The <b>Lover</b> brings feeling and connection (love).</p>
         </section>
 
         <section class="panel wide">

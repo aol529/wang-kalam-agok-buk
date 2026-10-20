@@ -11,7 +11,8 @@
 
   // Phases: in, in2 (a second sip in), hold (stay full), rest (stay empty), out.
   // rounds: a fixed number of breaths; otherwise the length is picked in minutes.
-  const TECHNIQUES = [
+  // The CMS can replace these in place (content.js).
+  const TECHNIQUES = WK.BREATHE = [
     { key: 'box', name: 'Box breathing', pace: '4 · 4 · 4 · 4', for: 'Calm and focus under pressure',
       how: 'In for 4, hold for 4, out for 4, hold empty for 4. Steady, square, through the nose.',
       phases: [['in', 4], ['hold', 4], ['out', 4], ['rest', 4]], minutes: 3 },
@@ -72,6 +73,8 @@
 
   function render(){
     const el = $('section-breathe');
+    // The list may have been edited in the CMS since this one was picked.
+    if (!run && !TECHNIQUES.includes(pick)) pick = TECHNIQUES.find(t => t.key === pick.key) || TECHNIQUES[0];
     const day = today();
     const conscience = F.CONSCIENCE;
     el.innerHTML = `
