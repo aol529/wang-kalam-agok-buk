@@ -986,6 +986,7 @@ body.public{background:var(--bg);color:var(--text);}
 .snd-master input{width:110px;accent-color:var(--accent);}
 .snd-timer select{width:auto;padding:6px 8px;font-size:13px;}
 .snd-h{font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:22px 0 10px;font-family:inherit;}
+.snd-note{margin:-4px 0 10px;}
 .snd-mixes{display:flex;flex-wrap:wrap;gap:8px;}
 .chip-btn{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--surface);color:var(--text);border-radius:999px;padding:7px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;}
 .chip-btn:hover{border-color:var(--gold);}

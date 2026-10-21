@@ -5,12 +5,15 @@
    save your own; a timer fades it all out. The sounds keep playing while
    you use the other tabs, with a small player at the corner to pause or
    come back. Recordings are in audio/ (made into seamless loops; see
-   audio/CREDITS.txt); the three noises are made in the browser. Each file
+   audio/CREDITS.txt); the noises, the solfeggio tones and the binaural
+   beats are made in the browser. Each file
    is downloaded the first time it is switched on. The mix, volumes and
    saved mixes stay in this browser. */
 (function(){
   const { $, esc } = WK;
 
+  // Made in the browser rather than downloaded.
+  const MADE = { Noise: 'noise', 'Solfeggio tones': 'tone', 'Binaural beats': 'tone' };
   const SOUNDS = [
     ['Rain', [
       ['light-rain', 'Rain'], ['heavy-rain', 'Heavy rain'], ['rain-on-window', 'Rain on the window'],
@@ -32,8 +35,30 @@
     ['Noise', [
       ['white', 'White noise', 'Even hiss across every pitch. Masks voices and sudden sounds.'],
       ['pink', 'Pink noise', 'Softer and deeper than white, like steady rain. Often used for sleep.'],
-      ['brown', 'Brown noise', 'A low rumble, like a waterfall far off. Calming for focus.']]]
-  ].map(([group, list]) => [group, list.map(([key, name, about]) => ({ key, name, about, noise: group === 'Noise' }))]);
+      ['brown', 'Brown noise', 'A low rumble, like a waterfall far off. Calming for focus.']]],
+    // Pure sine tones at the nine solfeggio pitches. The labels are what the tradition calls them.
+    ['Solfeggio tones', [
+      ['hz-174', '174 Hz', 'A pure, low tone. Traditionally linked with grounding.'],
+      ['hz-285', '285 Hz', 'A pure tone. Traditionally linked with restoring.'],
+      ['hz-396', '396 Hz', 'A pure tone. Traditionally linked with letting go of fear.'],
+      ['hz-417', '417 Hz', 'A pure tone. Traditionally linked with change.'],
+      ['hz-528', '528 Hz', 'A pure tone. Traditionally linked with love and renewal.'],
+      ['hz-639', '639 Hz', 'A pure tone. Traditionally linked with relationships.'],
+      ['hz-741', '741 Hz', 'A pure tone. Traditionally linked with clarity.'],
+      ['hz-852', '852 Hz', 'A pure tone. Traditionally linked with intuition.'],
+      ['hz-963', '963 Hz', 'A pure, high tone. Traditionally linked with oneness.']],
+      'Pure tones, made in the browser. Keep them quiet and mix them under rain or waves.'],
+    // A slightly different pitch in each ear; the brain hears the difference as a slow beat.
+    ['Binaural beats', [
+      ['bin-delta', 'Delta · 2 Hz', 'The slowest beat: the range of deep sleep. 200 Hz left, 202 Hz right.'],
+      ['bin-theta', 'Theta · 6 Hz', 'Drowsy and dreamy: the range of light sleep and meditation. 200 Hz left, 206 Hz right.'],
+      ['bin-alpha', 'Alpha · 10 Hz', 'Relaxed but awake: the range of calm rest. 200 Hz left, 210 Hz right.'],
+      ['bin-beta', 'Beta · 16 Hz', 'Alert and focused: the range of active thinking. 200 Hz left, 216 Hz right.'],
+      ['bin-gamma', 'Gamma · 40 Hz', 'The fastest beat: the range of sharp focus. 200 Hz left, 240 Hz right.']],
+      'Use headphones: each ear gets a slightly different pitch, and the beat is the difference between them.']
+  ].map(([group, list, note]) => [group, list.map(([key, name, about]) => ({ key, name, about, made: MADE[group] })), note]);
+  const BEATS = { 'bin-delta': 2, 'bin-theta': 6, 'bin-alpha': 10, 'bin-beta': 16, 'bin-gamma': 40 };
+  const CARRIER = 200;
   const ALL = SOUNDS.flatMap(([, list]) => list);
   const byKey = Object.fromEntries(ALL.map(s => [s.key, s]));
 
@@ -47,7 +72,10 @@
     { name: 'Night train', mix: { 'inside-a-train': .7, 'light-rain': .3 } },
     { name: 'At sea', mix: { sailboat: .7, waves: .4, seagulls: .15 } },
     { name: 'Deep focus', mix: { brown: .5, 'rain-on-window': .3 } },
-    { name: 'Sleep', mix: { pink: .35, waves: .35 } }
+    { name: 'Sleep', mix: { pink: .35, waves: .35 } },
+    { name: '528 Hz & rain', mix: { 'hz-528': .25, 'light-rain': .5 } },
+    { name: 'Theta rest', mix: { 'bin-theta': .4, pink: .2 } },
+    { name: 'Alpha focus', mix: { 'bin-alpha': .4, 'rain-on-window': .3 } }
   ];
   const TIMERS = [0, 15, 30, 45, 60, 90];
   const FADE = 1.2;          // seconds to fade a sound in or out
@@ -98,6 +126,18 @@
     return buf;
   }
 
+  // A tone, or a binaural pair (left and right a few Hz apart). Whole-number pitches
+  // over a whole number of seconds end where they start, so the loop is seamless.
+  function toneBuffer(key){
+    const sr = ctx.sampleRate, len = sr * 4, buf = ctx.createBuffer(2, len, sr);
+    const beat = BEATS[key], left = beat ? CARRIER : Number(key.slice(3)), right = beat ? CARRIER + beat : left;
+    [left, right].forEach((f, c) => {
+      const d = buf.getChannelData(c), w = 2 * Math.PI * f / sr;
+      for (let i = 0; i < len; i++) d[i] = Math.sin(w * i) * 0.18;
+    });
+    return buf;
+  }
+
   // An MP3 can carry a few silent samples at each end; cut them so the loop doesn't tick.
   function trimmed(buf){
     let start = buf.length, end = 0;
@@ -117,7 +157,8 @@
   function load(key){
     if (buffers[key]) return Promise.resolve(buffers[key]);
     if (!loading[key]){
-      loading[key] = (byKey[key].noise ? Promise.resolve(noiseBuffer(key))
+      const made = byKey[key].made;
+      loading[key] = (made ? Promise.resolve(made === 'noise' ? noiseBuffer(key) : toneBuffer(key))
         : fetch('audio/' + key + '.mp3').then(r => { if (!r.ok) throw new Error('not found'); return r.arrayBuffer(); })
             .then(data => new Promise((ok, fail) => ctx.decodeAudioData(data, ok, fail))).then(trimmed))
         .then(buf => (buffers[key] = buf))
@@ -298,7 +339,7 @@
     const on = Object.keys(mix).length;
     el.innerHTML = `
       <div class="section-head"><h1>Sounds</h1>
-        <p class="muted">Rain, wind, waves, a fire, a train, a busy café or plain noise: mix any of them for focus, rest or sleep. They keep playing while you use the other tabs.</p></div>
+        <p class="muted">Rain, wind, waves, a fire, a train, a busy café, plain noise, solfeggio tones or binaural beats: mix any of them for focus, rest or sleep. They keep playing while you use the other tabs.</p></div>
 
       <div class="snd-bar">
         <button type="button" class="btn snd-play" id="snd-play"${on ? '' : ' disabled'}>${playing ? 'Pause' : 'Play'}</button>
@@ -316,11 +357,11 @@
         ${on ? '<button type="button" class="chip-btn add" id="snd-save">+ Save this mix</button>' : ''}
       </div>
 
-      ${SOUNDS.map(([group, list]) => `
-        <h2 class="snd-h">${esc(group)}</h2>
+      ${SOUNDS.map(([group, list, note]) => `
+        <h2 class="snd-h">${esc(group)}</h2>${note ? `<p class="muted small snd-note">${esc(note)}</p>` : ''}
         <div class="snd-grid">${list.map(s => `<div class="snd-tile" id="snd-${s.key}"></div>`).join('')}</div>`).join('')}
 
-      <p class="muted small snd-credit">Recordings from <a href="https://github.com/remvze/moodist" target="_blank" rel="noopener">Moodist</a> (Pixabay and CC0 sounds), made into seamless loops. Each one downloads the first time you turn it on (about 1 MB). Mixes and volumes are kept in this browser.</p>`;
+      <p class="muted small snd-credit">Recordings from <a href="https://github.com/remvze/moodist" target="_blank" rel="noopener">Moodist</a> (Pixabay and CC0 sounds), made into seamless loops. Noise, solfeggio tones and binaural beats are made in the browser, so they need no download. The traditional meanings of the solfeggio tones, and the effects of binaural beats, are not proven by research; enjoy them as calm, steady sound. Each recording downloads the first time you turn it on (about 1 MB). Mixes and volumes are kept in this browser.</p>`;
 
     ALL.forEach(s => drawTile(s.key));
     $('snd-play').onclick = () => playing ? pause() : play();
