@@ -30,7 +30,7 @@ jobs:
         run: |
           mkdir -p _site
           cp index.html public.html icon.svg _site/
-          cp -r css js img _site/
+          cp -r css js img audio _site/
           # Cache-bust css/ and js/ links with this commit's id (the pages
           # use ?v=__BUILD__ as a placeholder), so a normal reload after a
           # deploy fetches the new files instead of a cached copy.

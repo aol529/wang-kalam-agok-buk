@@ -5,8 +5,8 @@ const path = require('path');
 const ROOT = __dirname;
 const INDEX_FILE = 'index.html';
 const PORT = process.env.PORT || 3001;
-const PUBLIC_FILES = [INDEX_FILE, 'icon.svg'];
-const PUBLIC_DIRS = ['css', 'js', 'img'];
+const PUBLIC_FILES = [INDEX_FILE, 'public.html', 'icon.svg'];
+const PUBLIC_DIRS = ['css', 'js', 'img', 'audio'];
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -15,6 +15,7 @@ const MIME_TYPES = {
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
+  '.mp3': 'audio/mpeg',
   '.jpeg': 'image/jpeg',
   '.gif': 'image/gif',
   '.svg': 'image/svg+xml',

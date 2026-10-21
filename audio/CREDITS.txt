@@ -1,0 +1,13 @@
+Sounds for the Sounds tab (js/sounds.js).
+
+The recordings come from Moodist (https://github.com/remvze/moodist,
+public/sounds), which takes them from Pixabay (Pixabay Content License,
+https://pixabay.com/service/license-summary/) and from CC0 sources
+(https://creativecommons.org/publicdomain/zero/1.0/). They may be used in
+apps and sites without attribution; this note credits them anyway.
+
+Each file here was cut to at most two minutes, made into a seamless loop
+(its last few seconds crossfaded into its start), matched in loudness
+(-22 LUFS) and saved as MP3 (96 kbps stereo, 56 kbps mono).
+
+White, pink and brown noise are made in the browser and have no files.
