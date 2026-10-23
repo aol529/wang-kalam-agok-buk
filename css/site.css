@@ -1000,6 +1000,9 @@ body.public{background:var(--bg);color:var(--text);}
 .snd-save-form{display:flex;gap:6px;}
 .snd-save-form input{width:180px;padding:7px 12px;border-radius:999px;font-size:14px;}
 .snd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,150px),1fr));gap:10px;}
+.snd-grid.wide{grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));}
+.snd-about,.snd-use{line-height:1.4;}
+.snd-use b{font-size:inherit;}
 .snd-tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);transition:border-color .2s,background .2s;}
 .snd-tile.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--surface));}
 .snd-toggle{display:grid;gap:6px;justify-items:start;width:100%;font:inherit;color:var(--text);background:none;border:0;padding:12px 12px 10px;text-align:left;cursor:pointer;}

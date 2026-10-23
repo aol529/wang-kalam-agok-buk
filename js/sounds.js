@@ -38,25 +38,25 @@
       ['brown', 'Brown noise', 'A low rumble, like a waterfall far off. Calming for focus.']]],
     // Pure sine tones at the nine solfeggio pitches. The labels are what the tradition calls them.
     ['Solfeggio tones', [
-      ['hz-174', '174 Hz', 'A pure, low tone. Traditionally linked with grounding.'],
-      ['hz-285', '285 Hz', 'A pure tone. Traditionally linked with restoring.'],
-      ['hz-396', '396 Hz', 'A pure tone. Traditionally linked with letting go of fear.'],
-      ['hz-417', '417 Hz', 'A pure tone. Traditionally linked with change.'],
-      ['hz-528', '528 Hz', 'A pure tone. Traditionally linked with love and renewal.'],
-      ['hz-639', '639 Hz', 'A pure tone. Traditionally linked with relationships.'],
-      ['hz-741', '741 Hz', 'A pure tone. Traditionally linked with clarity.'],
-      ['hz-852', '852 Hz', 'A pure tone. Traditionally linked with intuition.'],
-      ['hz-963', '963 Hz', 'A pure, high tone. Traditionally linked with oneness.']],
+      ['hz-174', '174 Hz', 'The lowest tone. Traditionally linked with grounding and easing pain.', 'a body scan, settling an aching body before sleep'],
+      ['hz-285', '285 Hz', 'Traditionally linked with restoring and healing the body.', 'resting while ill or tired, recovery days'],
+      ['hz-396', '396 Hz', 'The "liberation" tone. Traditionally linked with letting go of fear and guilt.', 'prayer, journaling, calming worry'],
+      ['hz-417', '417 Hz', 'Traditionally linked with change and clearing out the old.', 'a fresh start, reflecting on what to leave behind'],
+      ['hz-528', '528 Hz', 'The "love" tone. Traditionally linked with love and renewal.', 'gratitude, a gentle start to the day'],
+      ['hz-639', '639 Hz', 'Traditionally linked with relationships and harmony.', 'thinking over family and friendships, forgiveness'],
+      ['hz-741', '741 Hz', 'Traditionally linked with clarity and expression.', 'clearing your head, writing, problem solving'],
+      ['hz-852', '852 Hz', 'Traditionally linked with intuition and inner calm.', 'quiet reflection, meditation'],
+      ['hz-963', '963 Hz', 'The highest tone. Traditionally linked with oneness and the spirit.', 'deep prayer, stillness']],
       'Pure tones, made in the browser. Keep them quiet and mix them under rain or waves.'],
     // A slightly different pitch in each ear; the brain hears the difference as a slow beat.
     ['Binaural beats', [
-      ['bin-delta', 'Delta · 2 Hz', 'The slowest beat: the range of deep sleep. 200 Hz left, 202 Hz right.'],
-      ['bin-theta', 'Theta · 6 Hz', 'Drowsy and dreamy: the range of light sleep and meditation. 200 Hz left, 206 Hz right.'],
-      ['bin-alpha', 'Alpha · 10 Hz', 'Relaxed but awake: the range of calm rest. 200 Hz left, 210 Hz right.'],
-      ['bin-beta', 'Beta · 16 Hz', 'Alert and focused: the range of active thinking. 200 Hz left, 216 Hz right.'],
-      ['bin-gamma', 'Gamma · 40 Hz', 'The fastest beat: the range of sharp focus. 200 Hz left, 240 Hz right.']],
+      ['bin-delta', 'Delta · 2 Hz', 'The slowest beat: the range of deep, dreamless sleep. 200 Hz left, 202 Hz right.', 'falling asleep and staying deeply asleep'],
+      ['bin-theta', 'Theta · 6 Hz', 'Drowsy and dreamy: the edge of sleep. 200 Hz left, 206 Hz right.', 'meditation, prayer, winding down'],
+      ['bin-alpha', 'Alpha · 10 Hz', 'Relaxed but awake: calm, eyes-closed rest. 200 Hz left, 210 Hz right.', 'easing stress, calming down, light focus or reading'],
+      ['bin-beta', 'Beta · 16 Hz', 'Alert and focused: the range of active thinking. 200 Hz left, 216 Hz right.', 'study, work, staying alert on a task'],
+      ['bin-gamma', 'Gamma · 40 Hz', 'The fastest beat: the range of sharp focus. 200 Hz left, 240 Hz right.', 'short bursts of hard concentration']],
       'Use headphones: each ear gets a slightly different pitch, and the beat is the difference between them.']
-  ].map(([group, list, note]) => [group, list.map(([key, name, about]) => ({ key, name, about, made: MADE[group] })), note]);
+  ].map(([group, list, note]) => [group, list.map(([key, name, about, use]) => ({ key, name, about, use, made: MADE[group] })), note]);
   const BEATS = { 'bin-delta': 2, 'bin-theta': 6, 'bin-alpha': 10, 'bin-beta': 16, 'bin-gamma': 40 };
   const CARRIER = 200;
   const ALL = SOUNDS.flatMap(([, list]) => list);
@@ -359,7 +359,7 @@
 
       ${SOUNDS.map(([group, list, note]) => `
         <h2 class="snd-h">${esc(group)}</h2>${note ? `<p class="muted small snd-note">${esc(note)}</p>` : ''}
-        <div class="snd-grid">${list.map(s => `<div class="snd-tile" id="snd-${s.key}"></div>`).join('')}</div>`).join('')}
+        <div class="snd-grid${list[0].use ? ' wide' : ''}">${list.map(s => `<div class="snd-tile" id="snd-${s.key}"></div>`).join('')}</div>`).join('')}
 
       <p class="muted small snd-credit">Recordings from <a href="https://github.com/remvze/moodist" target="_blank" rel="noopener">Moodist</a> (Pixabay and CC0 sounds), made into seamless loops. Noise, solfeggio tones and binaural beats are made in the browser, so they need no download. The traditional meanings of the solfeggio tones, and the effects of binaural beats, are not proven by research; enjoy them as calm, steady sound. Each recording downloads the first time you turn it on (about 1 MB). Mixes and volumes are kept in this browser.</p>`;
 
@@ -386,9 +386,9 @@
     const s = byKey[key], on = key in mix, v = voices[key];
     el.className = 'snd-tile' + (on ? ' on' : '') + (v && v.pending ? ' loading' : '') + (on && playing && v && !v.pending ? ' live' : '');
     el.innerHTML = `
-      <button type="button" class="snd-toggle" aria-pressed="${on}"${s.about ? ` title="${esc(s.about)}"` : ''}>
+      <button type="button" class="snd-toggle" aria-pressed="${on}"${s.about && !s.use ? ` title="${esc(s.about)}"` : ''}>
         <span class="snd-wave" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
-        <b>${esc(s.name)}</b>${v && v.pending ? '<span class="muted small">Loading…</span>' : ''}
+        <b>${esc(s.name)}</b>${s.use ? `<span class="muted small snd-about">${esc(s.about)}</span><span class="small snd-use"><b>Good for:</b> ${esc(s.use)}</span>` : ''}${v && v.pending ? '<span class="muted small">Loading…</span>' : ''}
       </button>
       ${on ? `<input type="range" min="0.02" max="1" step="0.01" value="${mix[key]}" aria-label="${esc(s.name)} volume">` : ''}`;
     el.querySelector('.snd-toggle').onclick = () => toggle(key);
