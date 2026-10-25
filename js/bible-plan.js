@@ -37,6 +37,16 @@
   <span class="open-hint">Open reading &#8250;</span>
 </button>
 
+<div class="brp-unread" id="brp-unread" hidden>
+  <div class="brp-unread-head">
+    <span id="brp-unread-text"></span>
+    <button type="button" class="btn small primary" id="brp-catchup" hidden>Catch up</button>
+    <button type="button" class="btn small" id="brp-unread-toggle" aria-expanded="false" hidden>Show</button>
+  </div>
+  <ul class="brp-unread-list" id="brp-unread-list" hidden></ul>
+  <label class="brp-start">Started on <input type="date" id="brp-start"></label>
+</div>
+
 <div class="plan-switch subtabs" id="plan-switch">
   <button type="button" class="plan-switch-btn active" data-plan="daily">Daily Plan</button>
   <button type="button" class="plan-switch-btn" data-plan="52week">52-Week Plan</button>
@@ -934,14 +944,147 @@
 
   function saveProgress(){
     try { localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify(progress)); } catch (e) {}
+    forgetUnread();
     refreshProgressUI();
   }
 
   function setDone(key, done){
     if (done) progress[key] = 1;
     else delete progress[key];
+    // The first tick starts the plan's count of unread days.
+    const plan = planOf(key);
+    if (done && !starts[plan]){ starts[plan] = WK.isoDate(); saveStarts(); }
     saveProgress();
   }
+
+  // ---------------- Unread days ----------------
+  // When each plan was started, as { plan: 'YYYY-MM-DD' }, kept in this
+  // browser beside the ticks. Unread days are only counted from then. Set
+  // by the first tick, or by hand under the Today card.
+  const START_STORAGE_KEY = 'brp-start-v1';
+  let starts = {};
+  try { starts = JSON.parse(localStorage.getItem(START_STORAGE_KEY)) || {}; } catch (e) {}
+  function saveStarts(){ try { localStorage.setItem(START_STORAGE_KEY, JSON.stringify(starts)); } catch (e) {} }
+
+  const planOf = key => key.split(':')[0];
+  const midnight = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const DAY_MS = 86400000;
+
+  // The calendar plans' reading for a date (as setToday works out today's).
+  function keyForDate(plan, d){
+    if (plan === 'daily') return 'daily:' + MONTHS[d.getMonth()] + ':' + d.getDate();
+    const doy = Math.round((d - new Date(d.getFullYear(), 0, 0)) / DAY_MS);
+    return '52week:' + Math.min(52, Math.floor((doy - 1) / 7) + 1) + ':' + PLAN_52WEEK_DAY_TO_CATEGORY[d.getDay()];
+  }
+
+  // A plan ticked before start dates were kept gets one guessed from its
+  // ticks: the earliest ticked day for the calendar plans, and for the day
+  // plans a start that puts the first unread day on today.
+  function guessStart(plan){
+    const units = getUnits(plan), today = midnight(now);
+    if (plan in DAY_PLANS){
+      if (!units.some(u => isDone(u.key)) || isPlanComplete(plan)) return null;
+      return WK.isoDate(new Date(today.getFullYear(), today.getMonth(), today.getDate() - (units[firstUnreadIndex(plan)].day - 1)));
+    }
+    const first = units.find(u => isDone(u.key));
+    if (!first) return null;
+    const p = first.key.split(':');
+    let d = plan === 'daily' ? new Date(today.getFullYear(), MONTHS.indexOf(p[1]), Number(p[2]))
+      : new Date(today.getFullYear(), 0, 1 + (Number(p[1]) - 1) * 7);
+    if (d > today) d.setFullYear(d.getFullYear() - 1);
+    return WK.isoDate(d);
+  }
+  Object.keys(PLAN_NAMES).forEach(plan => {
+    if (starts[plan]) return;
+    const guess = guessStart(plan);
+    if (guess){ starts[plan] = guess; saveStarts(); }
+  });
+
+  // The readings whose day has passed since the plan was started but which
+  // aren't ticked, oldest first. Calendar plans go by the date, at most a
+  // year back (the plan comes round each year and ticks don't keep the
+  // year); day plans by how many days it has been since the start. Grace
+  // days have no reading, so nothing is owed for them.
+  let unreadCache = {};
+  function forgetUnread(){ unreadCache = {}; }
+  function unreadUnits(plan){
+    if (unreadCache[plan]) return unreadCache[plan];
+    const units = getUnits(plan), start = starts[plan];
+    const due = [];
+    if (start){
+      const from = WK.parseDate(start), today = midnight(now);
+      if (plan in DAY_PLANS){
+        const dayNum = Math.round((today - from) / DAY_MS) + 1;
+        units.forEach(u => { if (u.day < dayNum) due.push(u); });
+      } else {
+        const yearAgo = new Date(today.getFullYear() - 1, today.getMonth(), today.getDate() + 1);
+        const seen = new Set([units.byKey[todayKey(plan)]]);
+        for (const d = from > yearAgo ? from : yearAgo; d < today; d.setDate(d.getDate() + 1)){
+          const i = units.byKey[keyForDate(plan, d)];
+          if (i !== undefined && !seen.has(i)){ seen.add(i); due.push(units[i]); }
+        }
+      }
+    }
+    const list = due.filter(u => !isDone(u.key));
+    list.keys = new Set(list.map(u => u.key));
+    return unreadCache[plan] = list;
+  }
+  const isMissed = key => unreadUnits(planOf(key)).keys.has(key);
+
+  // Under the Today card: how many readings are unread, a way to catch
+  // up (the oldest first), and the date they're counted from.
+  const unreadEl = document.getElementById('brp-unread');
+  const unreadText = document.getElementById('brp-unread-text');
+  const unreadList = document.getElementById('brp-unread-list');
+  const unreadToggle = document.getElementById('brp-unread-toggle');
+  const catchUpBtn = document.getElementById('brp-catchup');
+  const startInput = document.getElementById('brp-start');
+  let unreadOpen = false;
+
+  function openFromHome(plan, unit){
+    showReadingView();
+    openUnit(plan, getUnits(plan).byKey[unit.key], 0);
+  }
+
+  function updateUnread(){
+    const plan = activePlan, list = unreadUnits(plan), n = list.length, s = n === 1 ? '' : 's';
+    unreadEl.hidden = false;
+    startInput.value = starts[plan] || '';
+    startInput.max = WK.isoDate();
+    unreadText.className = n ? 'behind' : '';
+    unreadText.textContent = !starts[plan] ? 'Tick a reading, or pick the day you started, to count unread days.'
+      : !n ? '\u2713 All caught up'
+      : plan in DAY_PLANS ? n + ' day' + s + ' behind'
+      : n + ' unread ' + (plan === '52week' ? 'reading' : 'day') + s;
+    catchUpBtn.hidden = unreadToggle.hidden = !n;
+    unreadList.hidden = !(n && unreadOpen);
+    unreadToggle.textContent = unreadOpen ? 'Hide' : 'Show';
+    unreadToggle.setAttribute('aria-expanded', String(unreadOpen));
+    unreadList.innerHTML = '';
+    if (!n || !unreadOpen) return;
+    list.forEach(u => {
+      const li = document.createElement('li');
+      const b = document.createElement('button');
+      b.type = 'button';
+      const when = document.createElement('span');
+      when.className = 'when';
+      when.textContent = u.label;
+      b.append(when, u.segs.map(seg => formatReading(seg.b, seg.c)).join(', '));
+      b.onclick = () => openFromHome(plan, u);
+      li.appendChild(b);
+      unreadList.appendChild(li);
+    });
+  }
+
+  catchUpBtn.onclick = () => { const list = unreadUnits(activePlan); if (list.length) openFromHome(activePlan, list[0]); };
+  unreadToggle.onclick = () => { unreadOpen = !unreadOpen; updateUnread(); };
+  startInput.onchange = () => {
+    if (startInput.value && startInput.value <= WK.isoDate()) starts[activePlan] = startInput.value;
+    else delete starts[activePlan];
+    saveStarts();
+    forgetUnread();
+    refreshProgressUI();
+  };
 
   function isPlanComplete(plan){
     return doneCount(plan) === getUnits(plan).length;
@@ -962,6 +1105,7 @@
   function markRow(tr, key){
     tr.dataset.key = key;
     tr.classList.toggle('done', isDone(key));
+    tr.classList.toggle('missed', isMissed(key));
   }
 
   function makeCheckCell(key){
@@ -1054,6 +1198,7 @@
     root.querySelectorAll('tr[data-key]').forEach(tr => {
       const done = isDone(tr.dataset.key);
       tr.classList.toggle('done', done);
+      tr.classList.toggle('missed', isMissed(tr.dataset.key));
       const box = tr.querySelector('td.brp-check input');
       if (box) box.checked = done;
     });
@@ -1196,6 +1341,7 @@
   // the card opens exactly that reading.
   let cardRef = null;
   function updateTodayCard(){
+    updateUnread();
     const card = document.getElementById('today-card');
     const dateEl = document.getElementById('today-date');
     const units = getUnits(activePlan);
@@ -1258,7 +1404,7 @@
   const ALL_PLANS = Object.keys(PLAN_NAMES);
 
   document.getElementById('progress-export').onclick = () => {
-    const data = { app: 'bible-reading-plan', version: 1, exported: new Date().toISOString(), progress };
+    const data = { app: 'bible-reading-plan', version: 1, exported: new Date().toISOString(), progress, starts };
     const stamp = new Date().toISOString().slice(0, 10);
     triggerDownload('bible-reading-progress-' + stamp + '.json', JSON.stringify(data, null, 2), 'application/json');
     showProgressStatus('Exported ' + Object.keys(progress).length + ' ticked readings.');
@@ -1278,6 +1424,11 @@
       if (!valid.length){ showProgressStatus('No readings found in that file.'); return; }
       const added = valid.filter(key => !isDone(key)).length;
       valid.forEach(key => { progress[key] = 1; });
+      // Start dates come too; the earlier of the two wins.
+      Object.entries((data && data.starts) || {}).forEach(([plan, day]) => {
+        if (PLAN_NAMES[plan] && /^\d{4}-\d{2}-\d{2}$/.test(day) && (!starts[plan] || day < starts[plan])) starts[plan] = day;
+      });
+      saveStarts();
       saveProgress();
       showProgressStatus('Imported ' + valid.length + ' ticked readings (' + added + ' new).');
     } catch (e){
@@ -1299,6 +1450,8 @@
     resetBtn.classList.remove('confirm');
     const cleared = getUnits(activePlan).filter(u => isDone(u.key));
     cleared.forEach(u => { delete progress[u.key]; });
+    delete starts[activePlan];
+    saveStarts();
     saveProgress();
     showProgressStatus('Cleared ' + cleared.length + ' ticked readings from ' + PLAN_NAMES[activePlan] + '.');
   };
@@ -1488,6 +1641,7 @@
       syncPassageHeight();
       if (new Date().toDateString() === shownDate) return;
       setToday();
+      forgetUnread();
       shownDate = now.toDateString();
       if (readingView.hidden) switchPlan(activePlan);
       else updateTodayCard();
