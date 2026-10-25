@@ -1,5 +1,5 @@
 /* Core: Supabase, sign-in, the section menu and small helpers. Each
-   section (Today, Vision, Planner, Review, Budget, Journal, Bible, Breathe, Sounds, Systems, Blog, Gallery, Legacy, Wishlist) registers itself with
+   section (Today, Vision, Planner, Review, Budget, Journal, Bible, Library, Breathe, Sounds, Systems, Blog, Gallery, Legacy, Wishlist) registers itself with
    WK.section(); once you are signed in, every section loads its data and
    the open one draws. The menu groups the sections into Do, Reflect and
    Keep: a bar with a sliding pill on wide screens, a dock along the
@@ -35,7 +35,7 @@
   // The menu. A section not named here joins the last group.
   const GROUPS = [
     { name: 'Do',      items: ['today', 'planner', 'review', 'systems', 'budget'] },
-    { name: 'Reflect', items: ['journal', 'bible', 'breathe', 'sounds'] },
+    { name: 'Reflect', items: ['journal', 'bible', 'library', 'breathe', 'sounds'] },
     { name: 'Keep',    items: ['vision', 'wishlist', 'legacy', 'blog', 'gallery'] }
   ];
   const DOCK = ['today', 'planner', 'breathe', 'journal'];   // on phones; the rest under More
