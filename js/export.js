@@ -7,7 +7,7 @@
   const { esc } = WK;
   const F = WK.F;
 
-  const TABLES = ['goals', 'journal_entries', 'day_plans', 'routine_ticks', 'quit_timers', 'gallery_items', 'blog_posts', 'budget_items', 'pages', 'site_content'];
+  const TABLES = ['goals', 'journal_entries', 'day_plans', 'routine_ticks', 'quit_timers', 'gallery_items', 'blog_posts', 'budget_items', 'wishlist_items', 'pages', 'site_content'];
   const PAGE = 1000;          // Supabase returns at most this many rows a request
 
   // Every row of a table, a page at a time. A table that isn't set up yet is empty.

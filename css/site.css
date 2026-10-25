@@ -783,6 +783,24 @@ th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;le
   .nb-x{padding:2px;}
 }
 
+/* Wishlist: one notebook page, with what you got below */
+.wish-box{padding:6px 4px 4px;}
+.wish-got{margin-top:14px;border-top:2px solid var(--margin);padding-top:12px;}
+.wish-box .nb-lines li{display:block;padding:2px 0;}
+.wish-row{display:flex;align-items:center;gap:6px;min-height:34px;}
+.wish-go{color:var(--pen);text-decoration:none;font-size:15px;padding:2px 4px;opacity:.75;}
+.wish-go:hover{opacity:1;}
+.nb-kind.on{border-color:var(--pen);color:var(--pen);}
+.wish-more{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:2px 0 8px 22px;}
+.wish-more input{font:14px Inter,system-ui,sans-serif;color:var(--pen);background:transparent;border:1px solid var(--rule);border-radius:6px;padding:5px 8px;min-width:0;}
+.wish-note-text{margin:-4px 0 6px 26px;font-family:Caveat,cursive;font-size:17px;opacity:.7;}
+.wish-when{display:block;margin:-6px 0 4px 26px;}
+.wish-box .nb-empty{padding:24px 8px;}
+@media (max-width:640px){
+  .wish-row{gap:4px;}
+  .wish-more{grid-template-columns:1fr;padding-left:0;}
+}
+
 /* ------------------------- Print: the Legacy book --------------------- */
 @media print{
   body.printing-legacy{background:#fff;color:#111;}
