@@ -1069,7 +1069,7 @@ body.public{background:var(--bg);color:var(--text);}
 .lib-book{display:flex;gap:16px;align-items:stretch;text-align:left;font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px;cursor:pointer;}
 .lib-book:hover{border-color:var(--gold);}
 .lib-cover{flex:0 0 110px;display:flex;flex-direction:column;justify-content:center;gap:8px;text-align:center;padding:14px 10px;border-radius:4px 8px 8px 4px;
-  background:linear-gradient(90deg,rgba(0,0,0,.22) 0 6px,transparent 6px),#5b2a1f;color:#f3e3c3;box-shadow:inset 0 0 0 2px rgba(243,227,195,.25);}
+  background:linear-gradient(90deg,rgba(0,0,0,.22) 0 6px,transparent 6px);background-color:#5b2a1f;color:#f3e3c3;box-shadow:inset 0 0 0 2px rgba(243,227,195,.25);}
 .lib-cover b{font-family:Fraunces,Georgia,serif;font-size:16px;line-height:1.2;}
 .lib-cover span{font-size:10.5px;line-height:1.35;opacity:.85;}
 .lib-info{display:flex;flex-direction:column;gap:6px;min-width:0;}
