@@ -1278,9 +1278,12 @@
     triggerDownload(planFilename('csv'), lines.join('\n'), 'text/csv');
   };
 
-  document.getElementById('download-pdf').onclick = () => {
+  document.getElementById('download-pdf').onclick = async () => {
     const rows = getExportRows(activePlan);
     const title = PLAN_NAMES[activePlan];
+    // The PDF library loads the first time it's needed.
+    try { await WK.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'); }
+    catch (e){ WK.toast(e.message); return; }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit: 'pt', format: 'letter' });
     const pageHeight = doc.internal.pageSize.getHeight();

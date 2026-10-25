@@ -162,6 +162,8 @@
       </article>`;
   }
   WK.entryCard = entryCard;
+  // A new journal entry, filled in (Practice's "Write it").
+  WK.openNewEntry = preset => openEntry(null, Object.assign({ kind: 'journal' }, preset));
   function wireList(root){
     root.querySelectorAll('[data-entry]').forEach(el => {
       const e = entries.find(x => x.id === el.dataset.entry);

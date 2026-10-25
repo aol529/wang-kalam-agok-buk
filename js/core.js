@@ -1,5 +1,5 @@
 /* Core: Supabase, sign-in, the section menu and small helpers. Each
-   section (Today, Vision, Planner, Review, Budget, Journal, Bible, Library, Breathe, Sounds, Systems, Blog, Gallery, Legacy, Wishlist) registers itself with
+   section (Today, Vision, Planner, Review, Budget, Journal, Bible, Library, Practice, Breathe, Sounds, Systems, Blog, Gallery, Legacy, Wishlist) registers itself with
    WK.section(); once you are signed in, every section loads its data and
    the open one draws. The menu groups the sections into Do, Reflect and
    Keep: a bar with a sliding pill on wide screens, a dock along the
@@ -23,6 +23,18 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
   }
+  // A script from a CDN, fetched the first time it's needed (the PDF and
+  // ZIP libraries: only the Bible's PDF download and the archive use them).
+  const scripts = {};
+  function loadScript(src){
+    if (!scripts[src]) scripts[src] = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = src; s.onload = resolve;
+      s.onerror = () => { delete scripts[src]; reject(new Error('Could not load a part of the page. Check the connection and try again.')); };
+      document.head.appendChild(s);
+    });
+    return scripts[src];
+  }
   function store(key, val){
     try { if (val === undefined) return localStorage.getItem(key); localStorage.setItem(key, val); } catch (e) {}
     return null;
@@ -35,7 +47,7 @@
   // The menu. A section not named here joins the last group.
   const GROUPS = [
     { name: 'Do',      items: ['today', 'planner', 'review', 'systems', 'budget'] },
-    { name: 'Reflect', items: ['journal', 'bible', 'library', 'breathe', 'sounds'] },
+    { name: 'Reflect', items: ['journal', 'bible', 'library', 'practice', 'breathe', 'sounds'] },
     { name: 'Keep',    items: ['vision', 'wishlist', 'legacy', 'blog', 'gallery'] }
   ];
   const DOCK = ['today', 'planner', 'breathe', 'journal'];   // on phones; the rest under More
@@ -45,7 +57,7 @@
 
 
   Object.assign(WK, {
-    $, esc, isoDate, parseDate, addDays, fmtDate, toast, store,
+    $, esc, isoDate, parseDate, addDays, fmtDate, toast, store, loadScript,
     db: null, user: null,
     section(def){ sections.push(def); },
     // Sections that come and go while the site runs (your pages).

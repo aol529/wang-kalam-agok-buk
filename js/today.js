@@ -1,5 +1,5 @@
 /* Today: the front page. The day's plan, what's in Necessity, the next
-   steps in Personal Leadership, the journal prompt, entries from this day
+   steps in Personal Leadership, the journal prompt, today's Stoic exercise (practice.js), entries from this day
    in past years, how the seven life areas are covered, the "Have a
    clear conscience" checklist from 2014, the Days without timers
    (timers.js), the focus timer (focus.js), the Minimum Home Routine
@@ -82,6 +82,8 @@
           <button type="button" class="btn small ${wroteToday ? '' : 'primary'}" id="today-write">${wroteToday ? 'Write another entry' : 'Write today’s entry'}</button>
         </section>
 
+        ${WK.practicePanel ? WK.practicePanel() : ''}
+
         ${onThisDay.length ? `
         <section class="panel">
           <h2>On this day</h2>
@@ -110,6 +112,7 @@
       </div>`;
 
     el.querySelectorAll('[data-go]').forEach(b => { b.onclick = () => WK.show(b.dataset.go); });
+    if (WK.bindPractice) WK.bindPractice(el);
     el.querySelectorAll('[data-goal]').forEach(b => { b.onclick = () => WK.openGoal(WK.goals().find(g => g.id === b.dataset.goal)); });
     el.querySelectorAll('[data-entry]').forEach(b => { b.onclick = () => WK.openEntry(entries.find(e => e.id === b.dataset.entry)); });
     // Tick a point: save the day's ticks, and undo the tick if it fails.

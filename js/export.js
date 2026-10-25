@@ -163,6 +163,8 @@ Keep a copy somewhere that isn't the internet: a drive, a USB stick, paper.
 
   WK.exportArchive = async (progress) => {
     const say = progress || (() => {});
+    say('Getting ready…');
+    await WK.loadScript('https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js');   // loads the first time
     if (!window.JSZip) throw new Error('The ZIP library did not load. Check the connection and reload.');
     const zip = new JSZip();
     const today = WK.isoDate();
