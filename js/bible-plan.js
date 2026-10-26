@@ -426,15 +426,54 @@
   const passageListenBtn = document.getElementById('passage-listen-btn');
   let activeLink = null;
 
-  // Read-aloud — the browser's own built-in speech synthesis (Web Speech
-  // API), supported natively in every modern browser with no extra
-  // software or screen reader needed on the visitor's end. speechText is
-  // rebuilt for whichever passage is currently loaded (verse text only,
-  // no verse-number digits, so it reads naturally instead of "1 In the
-  // beginning 2 the earth was...").
+  // Read-aloud: the browser's own speech (Web Speech API). It needs a voice
+  // installed on the device: phones and Windows/Mac have them, but Chrome on
+  // Linux often has none, and then speaking silently does nothing. So the
+  // button only shows once the browser reports at least one voice (they
+  // can arrive late, hence voiceschanged). speechText is rebuilt for each
+  // passage (verse text only, no verse numbers, so it reads naturally). It
+  // is spoken a few sentences at a time: Chrome can cut a long utterance
+  // off after about 15 seconds.
   const speechSupported = 'speechSynthesis' in window;
   let speechText = '';
   let speechState = 'idle'; // idle | playing | paused
+  let voices = [];
+  let chunks = [], chunkAt = 0;
+  const canSpeak = () => speechSupported && voices.length > 0;
+  function showListen(){ passageListenBtn.hidden = !canSpeak() || !speechText; }
+  if (speechSupported){
+    const loadVoices = () => { voices = window.speechSynthesis.getVoices(); showListen(); };
+    loadVoices();
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+  }
+  // An English voice if there is one, preferring the device's own.
+  function pickVoice(){
+    const en = voices.filter(v => /^en(-|_|$)/i.test(v.lang));
+    return en.find(v => v.default) || en.find(v => v.localService) || en[0] || null;
+  }
+  function chunked(text){
+    const out = [];
+    (text.match(/[^.!?;:]+[.!?;:]+["'’”)]*\s*|[^.!?;:]+$/g) || [text]).forEach(sentence => {
+      const last = out[out.length - 1];
+      if (last && last.length + sentence.length < 220) out[out.length - 1] = last + sentence;
+      else out.push(sentence);
+    });
+    return out.map(c => c.trim()).filter(Boolean);
+  }
+  function speakNext(){
+    if (speechState !== 'playing') return;
+    if (chunkAt >= chunks.length){ speechState = 'idle'; updateListenBtn(); return; }
+    const utter = new SpeechSynthesisUtterance(chunks[chunkAt++]);
+    const v = pickVoice();
+    if (v){ utter.voice = v; utter.lang = v.lang; }
+    utter.onend = speakNext;
+    utter.onerror = e => {
+      if (e.error === 'interrupted' || e.error === 'canceled') return;
+      speechState = 'idle'; updateListenBtn();
+      WK.toast('Read-aloud stopped: this device couldn’t speak the passage.');
+    };
+    window.speechSynthesis.speak(utter);
+  }
 
   function updateListenBtn(){
     if (!speechSupported) return;
@@ -444,19 +483,19 @@
       : '&#9654; Resume';
   }
   function stopSpeech(){
-    if (speechSupported) window.speechSynthesis.cancel();
     speechState = 'idle';
+    chunks = []; chunkAt = 0;
+    if (speechSupported) window.speechSynthesis.cancel();
     updateListenBtn();
   }
   if (speechSupported){
     passageListenBtn.addEventListener('click', () => {
       if (speechState === 'idle'){
-        if (!speechText) return;
-        const utter = new SpeechSynthesisUtterance(speechText);
-        utter.onend = () => { speechState = 'idle'; updateListenBtn(); };
-        utter.onerror = () => { speechState = 'idle'; updateListenBtn(); };
-        window.speechSynthesis.speak(utter);
+        if (!speechText || !canSpeak()) return;
+        window.speechSynthesis.cancel();
+        chunks = chunked(speechText); chunkAt = 0;
         speechState = 'playing';
+        speakNext();
       } else if (speechState === 'playing'){
         window.speechSynthesis.pause();
         speechState = 'paused';
@@ -598,7 +637,7 @@
       }
 
       speechText = speechParts.join(' ');
-      passageListenBtn.hidden = !speechSupported || !speechText;
+      showListen();
 
       passageTitle.textContent = title;
       const liveMinutes = liveWordCount ? Math.max(1, Math.round(liveWordCount / READING_WPM)) : null;
