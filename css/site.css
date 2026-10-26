@@ -114,7 +114,7 @@ textarea{resize:vertical;}
 .sheet-foot{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:12px;border-top:1px solid var(--line);}
 .subtabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:999px;}
 .subtabs button{border:0;background:transparent;color:var(--muted);font:inherit;font-weight:500;padding:6px 14px;border-radius:999px;cursor:pointer;display:inline-flex;gap:6px;align-items:center;}
-.subtabs button[aria-selected="true"]{background:var(--surface);color:var(--text);box-shadow:var(--shadow);}
+.subtabs button[aria-selected="true"],.subtabs button[aria-current="true"]{background:var(--surface);color:var(--text);box-shadow:var(--shadow);}
 .section-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px;}
 .section-head h1{font-size:30px;}
 .toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;}
@@ -1161,3 +1161,7 @@ body.is-offline .offline-note{display:block;}
   .link{min-height:32px;}
   .check input[type=checkbox]{width:22px;height:22px;}
 }
+
+/* Tabs for sections that share a menu item (core.js FAMILIES) */
+.family-tabs{width:max-content;max-width:100%;overflow-x:auto;margin:0 0 14px;}
+.family-tabs[hidden]{display:none;}

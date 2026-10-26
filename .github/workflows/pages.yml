@@ -31,6 +31,8 @@ jobs:
           mkdir -p _site
           cp index.html public.html icon.svg icon-192.png icon-512.png icon-maskable-512.png apple-touch-icon.png manifest.webmanifest sw.js _site/
           cp -r css js img audio _site/
+          # Join the page's scripts into one minified js/app.js (tools/bundle.mjs).
+          node tools/bundle.mjs _site
           # Cache-bust css/ and js/ links with this commit's id (the pages
           # use ?v=__BUILD__ as a placeholder), so a normal reload after a
           # deploy fetches the new files instead of a cached copy.

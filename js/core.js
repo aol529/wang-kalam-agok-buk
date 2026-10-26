@@ -3,7 +3,10 @@
    WK.section(); once you are signed in, every section loads its data and
    the open one draws. The menu groups the sections into Plan, Reflect,
    Read, Calm and Keep: a bar with a sliding pill on wide screens, a dock
-   along the bottom on phones with the rest in a "More" sheet. */
+   along the bottom on phones with the rest in a "More" sheet. Sections
+   that belong together share one menu item and show as tabs (FAMILIES):
+   Planner and Review, Budget and Wishlist, Practice and Systems, Breathe
+   and Sounds. */
 (function(){
   const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -55,6 +58,12 @@
     { name: 'Keep',    items: ['legacy', 'gallery', 'cms'] }
   ];
   const DOCK = ['today', 'planner', 'breathe', 'journal'];   // on phones; the rest under More
+  // Sections that share one menu item, shown as tabs above whichever is
+  // open: the first is the one in the menu.
+  const FAMILIES = [['planner', 'review'], ['budget', 'wishlist'], ['practice', 'systems'], ['breathe', 'sounds']];
+  const familyOf = name => FAMILIES.find(f => f.includes(name));
+  const headOf = name => { const f = familyOf(name); return f ? f[0] : name; };
+  const isTabOnly = name => { const f = familyOf(name); return !!f && f[0] !== name; };
   // Your own menu from the CMS: { groups: [{ name, items }], hidden: [names] }.
   let menu = null;
   const ALWAYS = ['today', 'cms'];   // never hidden, so you can't lock yourself out
@@ -100,6 +109,7 @@
       store('wk_section', name);
       markNav();
       sections.forEach(s => { $('section-' + s.name).hidden = s.name !== name; });
+      drawFamilyTabs();
       const s = sections.find(x => x.name === name);
       if (s && s.render) s.render();
       window.scrollTo(0, 0);
@@ -124,7 +134,7 @@
       const g = (s.group && list.find(x => x.name === s.group)) || list[list.length - 1];
       g.items.push(s);
     });
-    if (!all) list.forEach(g => { g.items = g.items.filter(s => !WK.isHidden(s.name) && !s.offMenu); });
+    if (!all) list.forEach(g => { g.items = g.items.filter(s => !WK.isHidden(s.name) && !s.offMenu && !isTabOnly(s.name)); });
     return list.filter(g => all || g.items.length);
   }
   const navBtn = (s, cls) => `<button type="button" class="${cls}" data-section="${s.name}" title="${esc(s.label)}">${WK.icon(s.icon || s.name)}<span class="nav-label">${esc(s.label)}</span></button>`;
@@ -158,13 +168,32 @@
     markNav();
   }
 
+  // Tabs above a section that shares its menu item (FAMILIES). They sit
+  // outside the section, so its own redraws don't touch them.
+  function drawFamilyTabs(){
+    let bar = $('family-tabs');
+    if (!bar){
+      bar = document.createElement('nav');
+      bar.id = 'family-tabs'; bar.className = 'subtabs family-tabs'; bar.setAttribute('aria-label', 'Tabs');
+      const main = document.querySelector('#app main');
+      if (!main) return;
+      main.insertBefore(bar, main.querySelector('.section'));
+    }
+    const fam = familyOf(current);
+    const members = fam ? fam.map(n => sections.find(s => s.name === n)).filter(s => s && !WK.isHidden(s.name)) : [];
+    bar.hidden = members.length < 2;
+    if (bar.hidden) return;
+    bar.innerHTML = members.map(s => `<button type="button" data-tab="${s.name}" aria-current="${s.name === current}">${esc(s.label)}</button>`).join('');
+    bar.querySelectorAll('[data-tab]').forEach(b => { b.onclick = () => WK.show(b.dataset.tab); });
+  }
+
   // The current section in all three menus; the pill slides under it.
   function markNav(){
     document.querySelectorAll('#nav [data-section], #dock [data-section], #nav-sheet [data-section]')
-      .forEach(b => b.setAttribute('aria-current', b.dataset.section === current ? 'page' : 'false'));
+      .forEach(b => b.setAttribute('aria-current', b.dataset.section === headOf(current) ? 'page' : 'false'));
     const more = $('dock-more');
     if (more){
-      const inDock = DOCK.includes(current), s = sections.find(x => x.name === current);
+      const inDock = DOCK.includes(headOf(current)), s = sections.find(x => x.name === headOf(current));
       more.setAttribute('aria-current', inDock ? 'false' : 'page');
       more.innerHTML = inDock || !s ? `${WK.icon('more')}<span class="nav-label">More</span>` : `${WK.icon(s.icon || s.name)}<span class="nav-label">${esc(s.label)}</span>`;
     }

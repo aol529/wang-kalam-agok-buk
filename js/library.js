@@ -71,7 +71,7 @@
   function loadBook(id){
     if (WK.BOOKS && WK.BOOKS[id]) return Promise.resolve();
     if (!loading[id]) loading[id] = new Promise((resolve, reject) => {
-      const me = document.querySelector('script[src*="js/library.js"]');
+      const me = document.querySelector('script[src*="?v="]');
       const v = me && me.src.includes('?v=') ? me.src.split('?v=')[1] : '';
       const s = document.createElement('script');
       s.src = 'js/library/' + id + '.js' + (v ? '?v=' + v : '');
