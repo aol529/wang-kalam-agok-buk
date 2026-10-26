@@ -1,9 +1,9 @@
 /* Core: Supabase, sign-in, the section menu and small helpers. Each
    section (Today, Vision, Planner, Review, Budget, Journal, Bible, Library, Practice, Breathe, Sounds, Systems, Blog, Gallery, Legacy, Wishlist) registers itself with
    WK.section(); once you are signed in, every section loads its data and
-   the open one draws. The menu groups the sections into Do, Reflect and
-   Keep: a bar with a sliding pill on wide screens, a dock along the
-   bottom on phones with the rest in a "More" sheet. */
+   the open one draws. The menu groups the sections into Plan, Reflect,
+   Read, Calm and Keep: a bar with a sliding pill on wide screens, a dock
+   along the bottom on phones with the rest in a "More" sheet. */
 (function(){
   const $ = id => document.getElementById(id);
   const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -45,10 +45,14 @@
   const wanted = current;   // a page section may arrive after the first draw
 
   // The menu. A section not named here joins the last group.
+  // Five spaces: what to do (Plan), inner work (Reflect), reading (Read),
+  // calming down (Calm) and what's kept (Keep). The CMS can change it.
   const GROUPS = [
-    { name: 'Do',      items: ['today', 'planner', 'review', 'systems', 'budget'] },
-    { name: 'Reflect', items: ['journal', 'bible', 'library', 'practice', 'breathe', 'sounds'] },
-    { name: 'Keep',    items: ['vision', 'wishlist', 'legacy', 'blog', 'gallery'] }
+    { name: 'Plan',    items: ['today', 'planner', 'review', 'vision', 'budget', 'wishlist'] },
+    { name: 'Reflect', items: ['journal', 'practice', 'systems', 'bible'] },
+    { name: 'Read',    items: ['library', 'blog'] },
+    { name: 'Calm',    items: ['breathe', 'sounds'] },
+    { name: 'Keep',    items: ['legacy', 'gallery', 'cms'] }
   ];
   const DOCK = ['today', 'planner', 'breathe', 'journal'];   // on phones; the rest under More
   // Your own menu from the CMS: { groups: [{ name, items }], hidden: [names] }.
@@ -179,6 +183,8 @@
 
   document.addEventListener('DOMContentLoaded', () => {
     $('affirmation').textContent = WK.F.AFFIRMATION;
+    // The offline cache and "install as an app" (sw.js).
+    if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
     buildNav();
 
     const cfg = window.VB_CONFIG || {};

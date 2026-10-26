@@ -62,6 +62,9 @@
   const loading = {};
 
   WK.section({ name: 'library', label: 'Library', render, reset(){ bookId = null; chapter = null; } });
+  // For search (quick.js): the shelf, and opening a book (at a chapter).
+  WK.libraryShelf = () => SHELF;
+  WK.openBook = (id, ch) => { bookId = id; chapter = ch == null ? null : ch; WK.show('library'); };
 
   // A book's text, fetched once with the same cache-busting stamp as this
   // file (the pages' ?v=__BUILD__ becomes the commit id on deploy).

@@ -29,12 +29,12 @@ jobs:
       - name: Build site
         run: |
           mkdir -p _site
-          cp index.html public.html icon.svg _site/
+          cp index.html public.html icon.svg icon-192.png icon-512.png icon-maskable-512.png apple-touch-icon.png manifest.webmanifest sw.js _site/
           cp -r css js img audio _site/
           # Cache-bust css/ and js/ links with this commit's id (the pages
           # use ?v=__BUILD__ as a placeholder), so a normal reload after a
           # deploy fetches the new files instead of a cached copy.
-          sed -i "s/__BUILD__/${GITHUB_SHA::8}/g" _site/*.html
+          sed -i "s/__BUILD__/${GITHUB_SHA::8}/g" _site/*.html _site/sw.js
 
       - uses: actions/upload-pages-artifact@v3
         with:

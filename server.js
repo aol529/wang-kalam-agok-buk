@@ -5,7 +5,7 @@ const path = require('path');
 const ROOT = __dirname;
 const INDEX_FILE = 'index.html';
 const PORT = process.env.PORT || 3001;
-const PUBLIC_FILES = [INDEX_FILE, 'public.html', 'icon.svg'];
+const PUBLIC_FILES = [INDEX_FILE, 'public.html', 'icon.svg', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png', 'manifest.webmanifest', 'sw.js'];
 const PUBLIC_DIRS = ['css', 'js', 'img', 'audio'];
 
 const MIME_TYPES = {
@@ -13,6 +13,7 @@ const MIME_TYPES = {
   '.js': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.webmanifest': 'application/manifest+json; charset=utf-8',
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.mp3': 'audio/mpeg',

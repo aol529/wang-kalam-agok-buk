@@ -132,9 +132,12 @@
     if (now){ run(); render(); } else saveTimers[it.id] = setTimeout(run, 600);
   }
 
-  async function add(){
+  // Quick add (quick.js): open the wishlist with a new line, named if given.
+  WK.newWish = name => { WK.show('wishlist'); return add(name); };
+
+  async function add(name){
     const sort = items.reduce((m, i) => Math.max(m, i.sort || 0), 0) + 1;
-    const { data, error } = await WK.db.from('wishlist_items').insert([{ name: '', sort }]).select().single();
+    const { data, error } = await WK.db.from('wishlist_items').insert([{ name: typeof name === 'string' ? name : '', sort }]).select().single();
     if (error){ WK.toast('Not added: ' + error.message); return; }
     items.push(data);
     render();

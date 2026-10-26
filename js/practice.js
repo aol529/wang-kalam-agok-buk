@@ -146,6 +146,14 @@
 
   let filter = WK.store('wk_practice_when') || '';
 
+  // For search (quick.js): the exercises, and opening one.
+  WK.practiceList = () => EXERCISES;
+  WK.openPractice = key => {
+    filter = ''; WK.show('practice');
+    const card = document.getElementById('ex-' + key);
+    if (card){ card.scrollIntoView({ block: 'start' }); window.scrollBy(0, -70); card.classList.add('flash'); setTimeout(() => card.classList.remove('flash'), 1600); }
+  };
+
   WK.section({ name: 'practice', label: 'Practice', icon: 'compass', render });
 
   // For Today.
