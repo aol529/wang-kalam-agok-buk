@@ -17,7 +17,7 @@
       color: '#5b2a1f' },
     { id: 'marcus-meditations', title: 'Meditations', sub: 'Of the Emperor Marcus Aurelius',
       by: 'Marcus Aurelius · rendered by George W. Chrystal', year: '1902',
-      blurb: "The private notebook of a Roman emperor, written to himself on campaign: how to meet each day, bear other people, accept loss and death, and do his duty. Twelve books of short entries; open anywhere.",
+      blurb: "The private notebook of a Roman emperor, written to himself on campaign: how to meet each day, bear other people, accept loss and death, and do his duty. Twelve books of short entries; open anywhere. The Blog has a post on his life.",
       credit: "Chrystal's rendering (1902) of the Foulis translation of 1742, from Project Gutenberg #55317. Public domain.",
       color: '#4a2a5b' },
     { id: 'epictetus-enchiridion', title: 'The Enchiridion', sub: 'The Handbook',
