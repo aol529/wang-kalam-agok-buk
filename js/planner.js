@@ -128,7 +128,7 @@
 
       <div class="planner-grid">
         <div class="plan-blocks" id="plan-blocks"></div>
-        <aside class="plan-side">
+        <div class="plan-side">
           <div class="panel">
             <h2>From your goals</h2>
             <p class="muted small">Next steps from Necessity and Personal Leadership. Add one to the day.</p>
@@ -140,7 +140,7 @@
             <textarea id="plan-review" rows="6" placeholder="Tonight's review">${esc(p.review)}</textarea>
             <button type="button" class="btn small" id="plan-to-journal">🌙 Evening review in the Journal →</button>
           </div>
-        </aside>
+        </div>
       </div>
 
       <details class="panel training quadrant-img" open>

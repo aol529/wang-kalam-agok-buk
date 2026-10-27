@@ -219,12 +219,17 @@
     const cfg = window.VB_CONFIG || {};
     if (!cfg.supabaseUrl || /YOUR-/.test(cfg.supabaseUrl + cfg.supabaseAnonKey)){
       $('setup').hidden = false;
+      bootDone();
       return;
     }
     // Sign in, sign up, password reset and the Account dialog live in js/auth.js.
     WK.db = supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey, { auth: { storage: WK.authStorage } });
     WK.startAuth();
   });
+
+  // The splash in index.html, until something real is on screen.
+  const bootDone = () => { const b = $('boot'); if (b) b.remove(); };
+  setTimeout(bootDone, 8000);   // never leave it over the page if sign-in stalls
 
   // Show the site for this user, or the sign-in screen for null.
   let shown;
@@ -234,6 +239,7 @@
     shown = id;
     $('signin').hidden = !!user;
     $('app').hidden = !user;
+    bootDone();
     if (user) loadAll();
     else sections.forEach(s => s.reset && s.reset());
   };

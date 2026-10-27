@@ -41,7 +41,7 @@
       <div class="section-head"><div><span class="eyebrow">Content management</span><h1>CMS</h1></div></div>
       ${needsSql() ? '<p class="panel empty">Run <code>sql/08-cms.sql</code> in Supabase to start. Until then the site uses its original content.</p>' : ''}
       <nav class="subtabs" id="cms-tabs">${[['content', 'Content'], ['pages', 'Pages'], ['menu', 'Menu'], ['public', 'Public site']].map(([k, l]) =>
-        `<button type="button" data-tab="${k}" aria-selected="${k === tab}">${l}</button>`).join('')}</nav>
+        `<button type="button" data-tab="${k}" aria-pressed="${k === tab}">${l}</button>`).join('')}</nav>
       <div class="cms-pane">${needsSql() ? '' : tab === 'pages' ? pagesHtml() : tab === 'menu' ? menuHtml() : tab === 'public' ? publicHtml() : contentHtml()}</div>`;
     el.querySelectorAll('#cms-tabs [data-tab]').forEach(b => { b.onclick = () => { tab = b.dataset.tab; WK.store('wk_cms_tab', tab); draft = null; render(); }; });
     if (needsSql()) return;

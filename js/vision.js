@@ -66,7 +66,7 @@
   const visible = () => goals.filter(g => $('show-done').checked || !g.done);
 
   function render(){
-    $('vision-tabs').querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-selected', b.dataset.view === view));
+    $('vision-tabs').querySelectorAll('[data-view]').forEach(b => b.setAttribute('aria-pressed', b.dataset.view === view));
     ['board', 'needs', 'priorities'].forEach(v => { $('view-' + v).hidden = v !== view; });
     if (view === 'board') renderBoard();
     if (view === 'needs') renderNeeds();

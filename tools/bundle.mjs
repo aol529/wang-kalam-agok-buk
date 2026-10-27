@@ -1,6 +1,7 @@
 // Deploy step (see .github/workflows/pages.yml): joins the page's own
 // scripts, in the order index.html loads them, into one minified file,
-// js/app.js, and puts a single <script> tag where they were. Only the
+// js/app.js, and puts a single <script> tag where they were; then minifies
+// css/site.css. Only the
 // scripts at the end of <body> are joined; config.js and the CDN scripts
 // in <head> stay as they are. Run on the built copy: node tools/bundle.mjs _site
 // (local development keeps the separate files).
@@ -23,3 +24,11 @@ execFileSync('npx', ['--yes', 'esbuild@0.24.2', raw, '--minify', '--target=es202
 fs.unlinkSync(raw);
 fs.writeFileSync(htmlPath, html.slice(0, bodyAt) + body);
 console.log(`bundle: ${files.length} scripts -> js/app.js (${(fs.statSync(out).size / 1024).toFixed(0)} KB, from ${(joined.length / 1024).toFixed(0)} KB)`);
+
+// The stylesheet, minified in place (index.html and public.html both use it).
+const css = path.join(site, 'css', 'site.css');
+if (fs.existsSync(css)){
+  const before = fs.statSync(css).size;
+  execFileSync('npx', ['--yes', 'esbuild@0.24.2', css, '--minify', '--target=chrome100,firefox100,safari15', '--outfile=' + css, '--allow-overwrite'], { stdio: 'inherit' });
+  console.log(`bundle: css/site.css ${(before / 1024).toFixed(0)} KB -> ${(fs.statSync(css).size / 1024).toFixed(0)} KB`);
+}

@@ -25,7 +25,7 @@ inheritance of advice for my children. Static HTML/CSS/JS backed by Supabase.
 
 The menu groups the sections into five spaces: **Plan** (Today, Planner, Vision, Budget), **Reflect** (Journal, Practice, Bible), **Read** (Library, Blog), **Calm** (Breathe) and **Keep** (Legacy, Gallery, CMS). Sections that belong together share one menu item and show as tabs above it: Planner and Review, Budget and Wishlist, Practice and Systems, Breathe and Sounds (`FAMILIES` in `js/core.js`). On phones it is a dock along the bottom, with the rest, Account and Sign out under More. The CMS's Menu tab can still change the order and groups. Icons are Lucide (ISC licence), inlined in `js/icons.js`.
 
-On deploy, `tools/bundle.mjs` joins the page's scripts into one minified `js/app.js` (one download instead of 37); locally they stay separate files.
+On deploy, `tools/bundle.mjs` joins the page's scripts into one minified `js/app.js` (one download instead of 37) and minifies `css/site.css`; locally they stay separate files. The first paint waits only for the site's own stylesheet: the Google Fonts load without blocking (text shows in a fallback serif, then swaps), Supabase and `config.js` are deferred, and a splash shows the name until sign-in or the app appears. Colours are checked for contrast (axe): gold text uses `--gold-ink`, a darker gold that stays readable on the light backgrounds.
 
 The life path itself (areas, levels, virtues, quadrants, routine, prompts) lives in `js/framework.js`.
 

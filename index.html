@@ -13,15 +13,21 @@
 <meta name="apple-mobile-web-app-title" content="WKAB">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+<!-- Fonts load without holding up the first paint: text shows in the fallback serif, then swaps -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Inter:wght@400;500;600&family=Caveat:wght@500;700&display=swap"></noscript>
 <link rel="stylesheet" href="css/site.css?v=__BUILD__">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3"></script>
-<script src="js/config.js?v=__BUILD__"></script>
+<!-- defer: only used once the page has loaded (core.js), so they no longer hold up the first paint -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3" defer></script>
+<script src="js/config.js?v=__BUILD__" defer></script>
 </head>
 <body>
 
+<!-- Shown until the sign-in screen or the app appears (core.js) -->
+<div class="boot" id="boot" aria-hidden="true"><span>Wang' Kalam Agok Buk</span></div>
+
 <!-- Signed out -->
-<section id="signin" class="signin" hidden>
+<section id="signin" class="signin" role="main" hidden>
   <div class="signin-card">
     <h1>Wang' Kalam Agok Buk</h1>
     <p class="muted">Journal, vision board, planner and legacy. Private: each account sees only its own.</p>
@@ -65,7 +71,7 @@
 </section>
 
 <!-- Not set up yet -->
-<section id="setup" class="signin" hidden>
+<section id="setup" class="signin" role="main" hidden>
   <div class="signin-card">
     <h1>Almost there</h1>
     <p class="muted">Add your Supabase project's URL and anon key to <code>js/config.js</code>, then reload.</p>

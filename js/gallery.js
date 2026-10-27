@@ -110,8 +110,8 @@
   /* ------------------- View / Edit switch (Blog uses it too) ------------------- */
   function modeToggle(id, on){
     return `<nav class="subtabs mode-toggle" id="${id}" aria-label="Mode">
-      <button type="button" data-mode="view" aria-selected="${!on}">View</button>
-      <button type="button" data-mode="edit" aria-selected="${on}">✎ Edit</button>
+      <button type="button" data-mode="view" aria-pressed="${!on}">View</button>
+      <button type="button" data-mode="edit" aria-pressed="${on}">✎ Edit</button>
     </nav>`;
   }
   function wireMode(root, id, set){

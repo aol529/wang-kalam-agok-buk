@@ -102,9 +102,9 @@
   function drawShelf(){
     const d = open && F.DEVOTIONS.find(x => x.key === open);
     $('devotions').innerHTML = `
-      <div class="shelf" role="list" aria-label="Prayers and affirmations">
+      <div class="shelf" role="group" aria-label="Prayers and affirmations">
         ${F.DEVOTIONS.map(x => `
-          <button type="button" class="shelf-card${x.mine ? ' mine' : ''}" data-devotion="${x.key}" aria-expanded="${open === x.key}" role="listitem">
+          <button type="button" class="shelf-card${x.mine ? ' mine' : ''}" data-devotion="${x.key}" aria-expanded="${open === x.key}">
             <b>${esc(x.title)}</b><span>${esc(x.by || ' ')}</span>
           </button>`).join('')}
       </div>

@@ -45,7 +45,7 @@
 
     const showTab = t => {
       tab = t; WK.store('wk_legacy_tab', t);
-      el.querySelectorAll('#legacy-tabs [data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t));
+      el.querySelectorAll('#legacy-tabs [data-tab]').forEach(b => b.setAttribute('aria-pressed', b.dataset.tab === t));
       el.querySelectorAll('.legacy-pane').forEach(p => { p.hidden = p.dataset.pane !== t; });
     };
     el.querySelectorAll('#legacy-tabs [data-tab]').forEach(b => { b.onclick = () => showTab(b.dataset.tab); });

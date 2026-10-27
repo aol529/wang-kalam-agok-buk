@@ -130,7 +130,7 @@
         <section class="panel review-days">
           <h2>The days</h2>
           <div class="table-wrap"><table class="review-table">
-            <thead><tr><th></th><th>Tasks</th><th>🐸</th><th title="Clear conscience">Conscience</th><th title="Daily home routine">Home</th><th>Journal</th></tr></thead>
+            <thead><tr><th><span class="sr-only">Day</span></th><th>Tasks</th><th>🐸</th><th title="Clear conscience">Conscience</th><th title="Daily home routine">Home</th><th>Journal</th></tr></thead>
             <tbody>${dayRows.map(r => `
               <tr class="${r.d === today ? 'is-today' : ''}${r.d > today ? ' is-future' : ''}">
                 <th><button type="button" class="link" data-day="${r.d}">${esc(dayName(r.d))} ${WK.parseDate(r.d).getDate()}</button></th>
