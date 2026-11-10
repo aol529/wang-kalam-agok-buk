@@ -1,6 +1,6 @@
 /* Legacy: what is meant to be handed down. The Way (the life path table
-   explained), Letters to the children, and the journal entries marked
-   "for my children". "Print as a book" prints all three; "Download the
+   explained), Letters to the future, and the journal entries marked
+   "for the future". "Print as a book" prints all three; "Download the
    archive" saves everything in the app as a ZIP to keep offline (export.js). */
 (function(){
   const { $, esc } = WK;
@@ -21,7 +21,7 @@
     el.innerHTML = `
       <div class="section-head legacy-head">
         <div>
-          <span class="eyebrow">For my children</span>
+          <span class="eyebrow">For the future</span>
           <h1>Wang' Kalam Agok Buk</h1>
         </div>
         <div class="legacy-actions">
@@ -39,7 +39,7 @@
       <div class="legacy-pane" data-pane="letters">${lettersHtml(letters)}</div>
       <div class="legacy-pane" data-pane="lessons">
         <h2 class="print-title">From the Journal</h2>
-        <p class="lead">Journal entries marked “for my children”. Tick that box on any entry to add it here.</p>
+        <p class="lead">Journal entries marked “for the future”. Tick that box on any entry to add it here.</p>
         <div class="entries">${lessons.map(e => WK.entryCard(e)).join('') || '<p class="empty">None yet.</p>'}</div>
       </div>`;
 
@@ -95,7 +95,7 @@
         <article class="letter" data-entry="${l.id}" tabindex="0">
           <span class="seal">✉</span>
           <h3>${esc(l.title || 'Untitled letter')}</h3>
-          <p class="muted">${l.to_whom ? 'To ' + esc(l.to_whom) : 'To my children'}${l.open_on ? ` · ${l.open_on > today ? 'Open on' : 'Opened'} ${esc(WK.fmtDate(l.open_on))}` : ''}</p>
+          <p class="muted">${l.to_whom ? 'To ' + esc(l.to_whom) : 'To the future'}${l.open_on ? ` · ${l.open_on > today ? 'Open on' : 'Opened'} ${esc(WK.fmtDate(l.open_on))}` : ''}</p>
           <p class="letter-body">${esc(l.body || '')}</p>
           <p class="muted small">Written ${esc(WK.fmtDate(l.entry_date))}</p>
         </article>`).join('') || '<p class="empty">No letters yet. Pick a starting point below.</p>'}</div>

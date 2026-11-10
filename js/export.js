@@ -33,7 +33,7 @@
     return [
       (e.areas || []).length ? e.areas.join(', ') : '',
       e.mood ? 'Mood ' + F.MOODS[e.mood - 1] : '',
-      e.for_children ? 'For my children' : ''
+      e.for_children ? 'For the future' : ''
     ].filter(Boolean).join(' · ');
   }
 
@@ -43,7 +43,7 @@
     return `## ${e.entry_date} · ${e.title || 'Untitled'}\n\n${meta ? `*${meta}*\n\n` : ''}${(e.body || '').trim()}\n\n${e.gratitude ? `Grateful for: ${e.gratitude.trim()}\n\n` : ''}`;
   }
   function letterMd(l){
-    const to = l.to_whom ? 'To ' + l.to_whom : 'To my children';
+    const to = l.to_whom ? 'To ' + l.to_whom : 'To the future';
     return `## ${l.title || 'Untitled letter'}\n\n*${to} · written ${l.entry_date}${l.open_on ? ' · to be opened on ' + l.open_on : ''}*\n\n${(l.body || '').trim()}\n\n`;
   }
   function goalMd(g){
@@ -97,7 +97,7 @@ body{padding:24px 16px;}
 @media print{body{padding:0;background:#fff;} .bk-toc{display:none;}}
 </style></head>
 <body><main class="bk">
-  <header class="legacy-head"><div><span class="eyebrow">For my children</span><h1>Wang' Kalam Agok Buk</h1>
+  <header class="legacy-head"><div><span class="eyebrow">For the future</span><h1>Wang' Kalam Agok Buk</h1>
     <p class="muted">Kept until ${esc(fmt(today))}. Open this file in any web browser; print it to keep it on paper.</p></div></header>
   <nav class="bk-toc small"><a href="#way">The Way</a> · <a href="#letters">Letters</a> · <a href="#lessons">From the Journal</a> · <a href="#vision">Vision</a> · ${d.pages.length ? '<a href="#pages">Pages</a> · ' : ''}<a href="#journal">The whole journal</a> · <a href="#blog">Blog</a>${photos.length ? ' · <a href="#photos">Photos</a>' : ''}</nav>
 
@@ -107,13 +107,13 @@ body{padding:24px 16px;}
     ${letters.map(l => `
       <article class="bk-entry">
         <h3>${esc(l.title || 'Untitled letter')}</h3>
-        <p class="muted small">${l.to_whom ? 'To ' + esc(l.to_whom) : 'To my children'} · written ${esc(fmt(l.entry_date))}${l.open_on ? ' · to be opened on ' + esc(fmt(l.open_on)) : ''}</p>
+        <p class="muted small">${l.to_whom ? 'To ' + esc(l.to_whom) : 'To the future'} · written ${esc(fmt(l.entry_date))}${l.open_on ? ' · to be opened on ' + esc(fmt(l.open_on)) : ''}</p>
         <div class="letter-body">${prose(l.body)}</div>
       </article>`).join('') || '<p class="empty">No letters yet.</p>'}
   </section>
 
   <section class="bk-part" id="lessons"><h2>From the Journal</h2>
-    <p class="lead">Entries marked “for my children”.</p>
+    <p class="lead">Entries marked “for the future”.</p>
     ${lessons.map(entryHtml).join('') || '<p class="empty">None yet.</p>'}
   </section>
 
@@ -149,7 +149,7 @@ body{padding:24px 16px;}
 
 book.html     The whole thing as a book. Open it in any web browser.
               To print it, or keep it as a PDF: File > Print > Save as PDF.
-letters.md    The letters to my children, as plain text.
+letters.md    The letters to the future, as plain text.
 journal.md    Every journal entry, oldest first.
 vision.md     The goals on the Vision board, by life area.
 blog.md       The published blog posts.
@@ -195,7 +195,7 @@ Keep a copy somewhere that isn't the internet: a drive, a USB stick, paper.
     root.file('pages.md', '# Pages\n\n' + d.pages.slice().sort((a, b) => a.sort - b.sort).map(pageMd).join(''));
     const letters = d.journal_entries.filter(e => e.kind === 'letter').sort(byDate('entry_date'));
     const journal = d.journal_entries.filter(e => e.kind === 'journal').sort(byDate('entry_date'));
-    root.file('letters.md', '# Letters to my children\n\n' + (letters.map(letterMd).join('') || '(none yet)\n'));
+    root.file('letters.md', '# Letters to the future\n\n' + (letters.map(letterMd).join('') || '(none yet)\n'));
     root.file('journal.md', '# Journal\n\n' + (journal.map(entryMd).join('') || '(none yet)\n'));
     root.file('vision.md', '# Vision\n\n' + F.CATEGORIES.map(c => {
       const gs = d.goals.filter(g => g.category === c.name);

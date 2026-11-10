@@ -1,6 +1,6 @@
 /* Journal: dated entries tagged by life area, with a mood and what you're
    grateful for. A prompt a day from the life path. Any entry can be marked
-   "for my children": it then appears in Legacy too. Letters (Legacy) are
+   "for the future": it then appears in Legacy too. Letters (Legacy) are
    entries of kind 'letter' and share the same editor. The Stoic review
    starts a morning or evening entry from its questions. "Blog it" saves
    an entry and starts a blog post from it. */
@@ -112,7 +112,7 @@
           <option value="">All entries</option>
           ${['evening', 'morning'].map(k => `<option value="${k}"${filter.practice === k ? ' selected' : ''}>${F.STOIC[k].icon} ${esc(F.STOIC[k].label)}s</option>`).join('')}
         </select>
-        <label class="toggle"><input type="checkbox" id="j-children"${filter.children ? ' checked' : ''}> For my children</label>
+        <label class="toggle"><input type="checkbox" id="j-children"${filter.children ? ' checked' : ''}> For the future</label>
       </div>
       <div id="j-list">${list.length ? groupByMonth(list) : `<p class="empty">${journal.length ? 'No entries match.' : 'No entries yet. Start with today’s prompt.'}</p>`}</div>`;
 
@@ -154,7 +154,7 @@
         <div class="entry-body">
           <h3>${e.mood ? `<span class="mood">${F.MOODS[e.mood - 1]}</span>` : ''}${esc(e.title || 'Untitled')}
             ${e.kind === 'letter' ? `<span class="chip">Letter${e.to_whom ? ' to ' + esc(e.to_whom) : ''}</span>` : ''}
-            ${e.for_children && e.kind !== 'letter' ? '<span class="chip legacy-chip" title="For my children">🌳 For my children</span>' : ''}</h3>
+            ${e.for_children && e.kind !== 'letter' ? '<span class="chip legacy-chip" title="For the future">🌳 For the future</span>' : ''}</h3>
           ${excerpt ? `<p class="entry-excerpt">${esc(excerpt)}</p><p class="entry-full">${esc(e.body)}</p>` : ''}
           ${e.gratitude ? `<p class="entry-full"><b>Grateful for:</b> ${esc(e.gratitude)}</p>` : ''}
           ${(e.areas || []).length ? `<div class="entry-areas">${e.areas.map(a => `<span title="${esc(a)}">${F.catOf(a).icon} ${esc(a)}</span>`).join('')}</div>` : ''}

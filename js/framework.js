@@ -137,14 +137,14 @@ WK.F = (function(){
     'Who did I show compassion to today?',
     'Where was I frugal today, and where was I wasteful?',
     'What did I read or learn this week that I want to keep?',
-    'What about today would I want my children to know?',
+    'What about today would I want the future to remember?',
     'Which did today need most: the King, the Warrior, the Magician or the Lover?',
     'What am I grateful for right now?',
     'What is the one thing that would make tomorrow a good day?',
     'Where did I lead today, and where did I follow?'
   ];
 
-  // Ideas for letters to the children, by life area and by moment.
+  // Ideas for letters to the future, by life area and by moment.
   const LETTER_PROMPTS = [
     ['Personal Development', 'The books that shaped me, and why'],
     ['Career', 'What work taught me about discipline and serving people'],
@@ -154,8 +154,8 @@ WK.F = (function(){
     ['Health & Appearance', 'Looking after your body: training, food and rest'],
     ['Recreation', 'Play, rest and the things that made life fun'],
     ['', 'For the day you feel lost'],
-    ['', 'On your 18th birthday'],
-    ['', 'When you become a parent'],
+    ['', 'To myself, ten years from now'],
+    ['', 'For whoever reads this one day'],
     ['', 'Where you come from: our family and our name']
   ];
 
