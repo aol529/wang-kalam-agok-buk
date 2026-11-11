@@ -1318,3 +1318,12 @@ body.is-offline .offline-note{display:block;}
 .m-lab-pick{display:flex;gap:6px;flex-wrap:wrap;}
 .m-lab-pick select{width:auto;flex:1 1 160px;font-size:13px;padding:5px 8px;}
 .m-weeks li.is-now .m-bar-name{font-weight:600;}
+/* Money: cards that open their lines */
+.bud-sum>div.is-tap{cursor:pointer;transition:border-color .15s, transform .15s;}
+.bud-sum>div.is-tap:hover{border-color:var(--accent);}
+.bud-sum>div.is-tap:active{transform:scale(.98);}
+.bud-sum>div.is-tap::after{content:"›";justify-self:end;margin-top:-18px;color:var(--muted);font-size:16px;line-height:1;}
+.m-weeks li:hover{background:var(--surface-2);}
+.m-chips{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:4px 0 6px;}
+.m-chip{border:1px solid var(--accent);background:transparent;color:var(--accent);border-radius:999px;padding:3px 10px;font:500 12.5px Inter,system-ui,sans-serif;cursor:pointer;}
+.m-chip:hover{background:var(--accent);color:var(--accent-ink);}

@@ -22,7 +22,9 @@
   let missing = false;
   let month = WK.isoDate().slice(0, 7);
   let view = WK.store('wk_money_view') || 'overview';
-  const filt = { q: '', account: '', category: '', kind: '', label: '' };
+  // fees: only lines with a transaction cost; from/to: days (a week); budget: a Budget item.
+  const filt = { q: '', account: '', category: '', kind: '', label: '', fees: false, from: '', to: '', budget: '' };
+  const clearFilt = () => Object.assign(filt, { q: '', account: '', category: '', kind: '', label: '', fees: false, from: '', to: '', budget: '' });
   let found = null;          // a search over every month, or null
   // Transactions: newest/oldest/biggest/smallest first, by day or by week.
   let order = WK.store('wk_money_order') || 'new';
@@ -205,15 +207,15 @@
     const biz = book === 'business';
     // In "All": the business on its own, so its costs aren't lost in the household.
     const b = book === 'all' && hasBooks ? stats(month, 'business') : null;
-    const bizCard = b && (b.inn || b.spent) ? `<div><span class="muted small">Business ${b.inn - b.spent >= 0 ? 'profit' : 'loss'}</span><b class="${b.inn - b.spent < 0 ? 'owe' : ''}">${kes(Math.abs(b.inn - b.spent))}</b><span class="muted small">${kes(b.inn)} in · ${kes(b.spent)} costs</span></div>` : '';
+    const bizCard = b && (b.inn || b.spent) ? `<div data-card="business" title="Show the business on its own"><span class="muted small">Business ${b.inn - b.spent >= 0 ? 'profit' : 'loss'}</span><b class="${b.inn - b.spent < 0 ? 'owe' : ''}">${kes(Math.abs(b.inn - b.spent))}</b><span class="muted small">${kes(b.inn)} in · ${kes(b.spent)} costs</span></div>` : '';
     return `
       <div class="bud-sum money-sum">
-        <div><span class="muted small">${biz ? 'Money in' : 'Received'}</span><b class="m-in">${kes(s.inn)}</b></div>
-        <div><span class="muted small">${biz ? 'Costs' : 'Spent'}</span><b>${kes(s.spent)}</b>${change != null ? `<span class="muted small">${change > 0 ? '▲' : change < 0 ? '▼' : ''} ${Math.abs(change)}% on ${esc(monthName(shift(month, -1), { month: 'long' }))}</span>` : ''}</div>
-        <div><span class="muted small">${biz ? (left >= 0 ? 'Profit' : 'Loss') : left >= 0 ? 'Left over' : 'Overspent'}</span><b class="${left < 0 ? 'owe' : ''}">${kes(Math.abs(left))}</b>${s.inn ? `<span class="muted small">${Math.round(left / s.inn * 100)}% of what came in</span>` : ''}</div>
-        <div><span class="muted small">Transaction costs</span><b>${kes(s.fees)}</b></div>
-        ${pace != null ? `<div><span class="muted small">At this pace, by month end</span><b>${kes(pace)}</b><span class="muted small">${kes(s.spent / day)} a day</span></div>` : ''}
-        <div><span class="muted small">${biz ? 'Business accounts' : 'Net worth'}</span><b class="${w.net < 0 ? 'owe' : ''}">${kes(w.net)}</b>${w.owed ? `<span class="muted small">${kes(w.has)} held · ${kes(w.owed)} owed</span>` : ''}</div>
+        <div data-card="income" title="What came in"><span class="muted small">${biz ? 'Money in' : 'Received'}</span><b class="m-in">${kes(s.inn)}</b></div>
+        <div data-card="expense" title="What went out"><span class="muted small">${biz ? 'Costs' : 'Spent'}</span><b>${kes(s.spent)}</b>${change != null ? `<span class="muted small">${change > 0 ? '▲' : change < 0 ? '▼' : ''} ${Math.abs(change)}% on ${esc(monthName(shift(month, -1), { month: 'long' }))}</span>` : ''}</div>
+        <div data-card="all" title="Every line this month"><span class="muted small">${biz ? (left >= 0 ? 'Profit' : 'Loss') : left >= 0 ? 'Left over' : 'Overspent'}</span><b class="${left < 0 ? 'owe' : ''}">${kes(Math.abs(left))}</b>${s.inn ? `<span class="muted small">${Math.round(left / s.inn * 100)}% of what came in</span>` : ''}</div>
+        <div data-card="fees" title="Lines with a transaction cost"><span class="muted small">Transaction costs</span><b>${kes(s.fees)}</b></div>
+        ${pace != null ? `<div data-card="pace" title="Day by day"><span class="muted small">At this pace, by month end</span><b>${kes(pace)}</b><span class="muted small">${kes(s.spent / day)} a day</span></div>` : ''}
+        <div data-card="accounts" title="The accounts"><span class="muted small">${biz ? 'Business accounts' : 'Net worth'}</span><b class="${w.net < 0 ? 'owe' : ''}">${kes(w.net)}</b>${w.owed ? `<span class="muted small">${kes(w.has)} held · ${kes(w.owed)} owed</span>` : ''}</div>
         ${bizCard}
       </div>
 
@@ -264,7 +266,7 @@
     const max = Math.max(...weeks.map(w => w.out), 1);
     const span = w => WK.fmtDate(w.from, { day: 'numeric', month: 'short' }) + (w.to !== w.from ? '–' + WK.parseDate(w.to).getDate() : '');
     return `<section class="panel"><h2>Week by week</h2>
-      <ul class="m-bars m-weeks">${weeks.map(w => `<li title="${esc(span(w))}: out ${kes(w.out)}, in ${kes(w.inn)}"${w.now ? ' class="is-now"' : ''}>
+      <ul class="m-bars m-weeks">${weeks.map(w => `<li title="${esc(span(w))}: out ${kes(w.out)}, in ${kes(w.inn)}" data-week="${w.from}|${w.to}"${w.now ? ' class="is-now"' : ''}>
         <span class="m-bar-name">${esc(span(w))}</span>
         <span class="m-bar-track">${w.out ? `<i style="width:${(w.out / max * 100).toFixed(1)}%"></i>` : ''}</span>
         <span class="m-bar-val">${w.from > WK.isoDate() ? '<span class="muted">—</span>' : kes(w.out)}${w.inn ? `<span class="muted small"> · in ${kesShort(w.inn)}</span>` : ''}</span></li>`).join('')}</ul>
@@ -294,7 +296,7 @@
     return `<ul class="m-bars">${lines.map(x => {
       const over = x.lim != null && x.v > x.lim;
       const tip = `${catLabel(x.c)}: ${kes(x.v)}${x.lim != null ? ` of ${kes(x.lim)} (${Math.round(x.v / (x.lim || 1) * 100)}%)` : ''}`;
-      return `<li${over ? ' class="over"' : ''} title="${esc(tip)}"${x.c && x.c.id ? ` data-cat="${x.c.id}"` : x.c === null ? ' data-cat="none"' : ''}>
+      return `<li${over ? ' class="over"' : ''} title="${esc(tip)}"${x.fees ? ' data-cat="fees"' : x.c && x.c.id ? ` data-cat="${x.c.id}"` : x.c === null ? ' data-cat="none"' : ''}>
         <span class="m-bar-name">${esc(catLabel(x.c))}</span>
         <span class="m-bar-track"><i style="width:${(x.v / max * 100).toFixed(1)}%"></i>${x.lim != null ? `<em style="left:${(x.lim / max * 100).toFixed(1)}%" aria-hidden="true"></em>` : ''}</span>
         <span class="m-bar-val">${kes(x.v)}${x.lim != null ? `<span class="muted small"> / ${kesShort(x.lim)}</span>` : ''}${over ? ' <span class="m-over">over</span>' : ''}</span>
@@ -346,7 +348,7 @@
     return `<section class="panel">
       <h2>Budget vs real <button type="button" class="link small" data-go="budget">Budget</button></h2>
       <ul class="mini-list m-plan">${lines.map(i => { const v = spentOn.get(i.id) || 0, p = num(i.amount), paid = (i.paid || []).includes(i.monthly ? month : 'once');
-        return `<li><span>${paid ? '✓ ' : ''}${esc(i.name || 'Item')}</span><span class="small ${p && v > p ? 'review-bad' : v ? '' : 'muted'}">${v ? kes(v) : '—'}${p ? ` / ${kesShort(p)}` : ''}</span></li>`; }).join('')}</ul>
+        return `<li><button type="button" class="link" data-budget="${i.id}">${paid ? '✓ ' : ''}${esc(i.name || 'Item')}</button><span class="small ${p && v > p ? 'review-bad' : v ? '' : 'muted'}">${v ? kes(v) : '—'}${p ? ` / ${kesShort(p)}` : ''}</span></li>`; }).join('')}</ul>
       <p class="muted small">Planned ${kes(plan)} a month · paid through Money ${kes(real)}. Pick the budget item when adding a line.</p>
     </section>`;
   }
@@ -373,7 +375,30 @@
       (!filt.account || t.account_id === filt.account || t.to_account_id === filt.account) &&
       (!filt.category || (filt.category === 'none' ? !t.category_id && t.kind !== 'transfer' : t.category_id === filt.category)) &&
       (!filt.kind || t.kind === filt.kind) &&
-      (!filt.label || t.label_id === filt.label) && inBook(t));
+      (!filt.label || t.label_id === filt.label) &&
+      (!filt.fees || num(t.fee) > 0) &&
+      (!filt.budget || t.budget_item_id === filt.budget) &&
+      (!filt.from || localDay(t.occurred_at) >= filt.from) && (!filt.to || localDay(t.occurred_at) <= filt.to) && inBook(t));
+  }
+  // The filters the dropdowns don't show, as chips to take off.
+  function chipsHtml(){
+    const chips = [];
+    if (filt.fees) chips.push(['fees', 'With a transaction cost']);
+    if (filt.from) chips.push(['week', filt.from === filt.to ? WK.fmtDate(filt.from, { day: 'numeric', month: 'short' }) : WK.fmtDate(filt.from, { day: 'numeric', month: 'short' }) + ' – ' + WK.fmtDate(filt.to, { day: 'numeric', month: 'short' })]);
+    if (filt.budget){ const i = (WK.budgetItems ? WK.budgetItems() : []).find(x => x.id === filt.budget); chips.push(['budget', 'Pays ' + ((i && i.name) || 'a budget item')]); }
+    const any = chips.length || filt.account || filt.category || filt.kind || filt.label || filt.q;
+    if (!any) return '';
+    return `<div class="m-chips">${chips.map(([k, l]) => `<button type="button" class="m-chip" data-unfilt="${k}" aria-label="Remove: ${esc(l)}">${esc(l)} ✕</button>`).join('')}
+      <button type="button" class="link small" data-unfilt="all">Clear all filters</button></div>`;
+  }
+  // From a card: the lines behind it.
+  function showLines(f, opts){
+    clearFilt(); found = null;
+    Object.assign(filt, f);
+    if (opts && opts.group){ group = opts.group; order = 'new'; }
+    view = 'list';
+    render();
+    const body = $('money-body'); if (body) body.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }
   function listHtml(){
     const list = shownTx().slice();
@@ -398,6 +423,7 @@
         ${byAmount ? '' : `<select id="mf-group" aria-label="Group">${opt('day', 'By day', group)}${opt('week', 'By week', group)}</select>`}
         <button type="button" class="btn ghost small" id="mf-csv">CSV</button>
       </div>
+      ${chipsHtml()}
       <p class="muted small">${found ? `${list.length} found in every month${found.length >= 300 ? ' (the newest 300)' : ''}` : `${list.length} line${list.length === 1 ? '' : 's'} in ${esc(monthName(month, { month: 'long' }))}`} · out ${kes(out)} · in ${kes(inn)}</p>
       ${list.length ? days.map(g => {
         const o = outOf(g.items), i = inOf(g.items);
@@ -484,7 +510,7 @@
             <input class="m-cat-icon" value="${esc(c.icon)}" maxlength="4" aria-label="Icon" placeholder="•">
             <input class="m-cat-name" value="${esc(c.name)}" placeholder="Category" aria-label="Name">
             ${kind === 'expense' ? `<input class="m-cat-limit" inputmode="numeric" value="${c.monthly_limit == null ? '' : esc(c.monthly_limit)}" placeholder="no limit" aria-label="Monthly limit in KES" title="Monthly limit (KES)">` : ''}
-            <span class="muted small m-cat-sum">${kes((kind === 'expense' ? s.byCat : s.inByCat).get(c.id) || 0)}</span>
+            <button type="button" class="link muted small m-cat-sum" data-cat-lines="${c.id}" data-cat-kind="${kind}" title="Show its lines">${kes((kind === 'expense' ? s.byCat : s.inByCat).get(c.id) || 0)}</button>
             ${hasBooks ? `<button type="button" class="nb-kind${bookOf(c) === 'business' ? ' on' : ''}" data-cat-book title="Personal or business (tap to switch)">${bookOf(c) === 'business' ? 'business' : 'personal'}</button>` : ''}
             <button type="button" class="nb-x" data-cat-hide title="${c.archived ? 'Show again' : 'Hide (old lines keep it)'}" aria-label="${c.archived ? 'Show again' : 'Hide'}">${c.archived ? '↺' : '✕'}</button>
           </li>`).join('')}</ul>
@@ -515,7 +541,7 @@
           <div class="m-lab-top">
             <input class="m-cat-icon" data-f="icon" value="${esc(l.icon)}" maxlength="4" aria-label="Icon" placeholder="🏷️">
             <input class="m-cat-name" data-f="name" value="${esc(l.name)}" placeholder="Electricity (house)" aria-label="Name">
-            <span class="muted small m-cat-sum">${kes(s.byLabel.get(l.id) || 0)}</span>
+            <button type="button" class="link muted small m-cat-sum" data-label="${l.id}" title="Show its lines">${kes(s.byLabel.get(l.id) || 0)}</button>
             <button type="button" class="nb-kind${bookOf(l) === 'business' ? ' on' : ''}" data-lab-book title="Personal or business">${bookOf(l)}</button>
             <button type="button" class="nb-x" data-lab-hide aria-label="${l.archived ? 'Show again' : 'Hide'}">${l.archived ? '↺' : '✕'}</button>
           </div>
@@ -598,11 +624,39 @@
 
   function bindBody(el){
     el.querySelectorAll('[data-tx]').forEach(b => { b.onclick = () => openTx((found || []).concat(txs).find(t => t.id === b.dataset.tx)); });
-    el.querySelectorAll('[data-acc]').forEach(b => { b.onclick = () => openAccount(acc(b.dataset.acc)); });
+    // On Overview an account shows its lines; on Accounts it opens to be changed.
+    el.querySelectorAll('[data-acc]').forEach(b => { b.onclick = () => view === 'overview' ? showLines({ account: b.dataset.acc }) : openAccount(acc(b.dataset.acc)); });
+    el.querySelectorAll('[data-card]').forEach(c => {
+      c.classList.add('is-tap'); c.tabIndex = 0; c.setAttribute('role', 'button');
+      const go = () => {
+        const k = c.dataset.card;
+        if (k === 'income' || k === 'expense') showLines({ kind: k });
+        else if (k === 'all') showLines({});
+        else if (k === 'fees') showLines({ fees: true });
+        else if (k === 'pace') showLines({}, { group: 'day' });
+        else if (k === 'accounts'){ view = 'accounts'; render(); }
+        else if (k === 'business'){ book = 'business'; WK.store('wk_money_book', book); render(); }
+      };
+      c.onclick = go;
+      c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); go(); } };
+    });
+    el.querySelectorAll('[data-week]').forEach(li => { li.style.cursor = 'pointer'; li.onclick = () => { const [from, to] = li.dataset.week.split('|'); showLines({ from, to }); }; });
+    el.querySelectorAll('[data-budget]').forEach(b => { b.onclick = () => showLines({ budget: b.dataset.budget }); });
+    el.querySelectorAll('[data-unfilt]').forEach(b => { b.onclick = () => {
+      const k = b.dataset.unfilt;
+      if (k === 'all'){ clearFilt(); found = null; }
+      else if (k === 'week'){ filt.from = ''; filt.to = ''; }
+      else filt[k] = k === 'fees' ? false : '';
+      render();
+    }; });
     el.querySelectorAll('[data-view-go]').forEach(b => { b.onclick = () => { view = b.dataset.viewGo; WK.store('wk_money_view', view); render(); }; });
     el.querySelectorAll('[data-go]').forEach(b => { b.onclick = () => WK.show(b.dataset.go); });
-    el.querySelectorAll('[data-cat]').forEach(li => { li.style.cursor = 'pointer'; li.onclick = () => { filt.category = li.dataset.cat; view = 'list'; render(); }; });
-    el.querySelectorAll('[data-label]').forEach(b => { b.onclick = () => { filt.label = b.dataset.label; filt.category = ''; view = 'list'; render(); }; });
+    el.querySelectorAll('[data-cat]').forEach(li => { li.style.cursor = 'pointer'; li.onclick = () => {
+      const c = li.dataset.cat;
+      showLines(c === 'fees' ? { fees: true } : { category: c, kind: 'expense' });
+    }; });
+    el.querySelectorAll('[data-cat-lines]').forEach(b => { b.onclick = () => showLines({ category: b.dataset.catLines, kind: b.dataset.catKind }); });
+    el.querySelectorAll('[data-label]').forEach(b => { b.onclick = () => showLines({ label: b.dataset.label }); });
     el.querySelectorAll('[data-payee]').forEach(b => { b.onclick = async () => { filt.q = b.dataset.payee; view = 'list'; await search(); render(); }; });
     el.querySelectorAll('[data-month]').forEach(g => { g.onclick = async () => { if (g.dataset.month === month) return; month = g.dataset.month; await loadMonth(); render(); }; });
     if ($('mf-q')){
