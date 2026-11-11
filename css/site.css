@@ -1317,3 +1317,4 @@ body.is-offline .offline-note{display:block;}
 .m-lab-match{font-size:13px;color:var(--muted);}
 .m-lab-pick{display:flex;gap:6px;flex-wrap:wrap;}
 .m-lab-pick select{width:auto;flex:1 1 160px;font-size:13px;padding:5px 8px;}
+.m-weeks li.is-now .m-bar-name{font-weight:600;}

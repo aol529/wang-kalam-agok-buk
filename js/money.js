@@ -24,6 +24,9 @@
   let view = WK.store('wk_money_view') || 'overview';
   const filt = { q: '', account: '', category: '', kind: '', label: '' };
   let found = null;          // a search over every month, or null
+  // Transactions: newest/oldest/biggest/smallest first, by day or by week.
+  let order = WK.store('wk_money_order') || 'new';
+  let group = WK.store('wk_money_group') || 'day';
   let searchTimer;
   let showHidden = false;
 
@@ -47,6 +50,10 @@
   const monthStart = m => new Date(m + '-01T00:00:00+03:00').toISOString();
   const localDay = iso => WK.isoDate(new Date(iso));
   const localInput = d => { const p = x => String(x).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`; };
+  // The Monday of a day's week, as YYYY-MM-DD.
+  const mondayOf = day => { const d = new Date(day + 'T00:00:00'); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return WK.isoDate(d); };
+  const outOf = l => l.filter(t => t.source !== 'adjust').reduce((a, t) => a + (t.kind === 'expense' ? num(t.amount) : 0) + num(t.fee), 0);
+  const inOf = l => l.filter(t => t.kind === 'income' && t.source !== 'adjust').reduce((a, t) => a + num(t.amount), 0);
   const daysIn = m => new Date(Number(m.slice(0, 4)), Number(m.slice(5)), 0).getDate();
   // Amounts: digits and one decimal point (a text box: number boxes clip handwriting).
   const cleanAmount = s => { s = String(s).replace(/[^\d.]/g, ''); const i = s.indexOf('.'); return i < 0 ? s : s.slice(0, i + 1) + s.slice(i + 1).replace(/\./g, '').slice(0, 2); };
@@ -217,6 +224,7 @@
         </section>
 
         ${labelsPanel(s)}
+        ${weeksPanel()}
 
         <section class="panel money-wide">
           <h2>${biz ? 'Costs' : 'Spending'} by category</h2>
@@ -240,6 +248,27 @@
       <span><b>${esc(a.name)}</b><span class="muted small">${esc([KINDS[a.kind] !== a.name ? KINDS[a.kind] : '', loan && a.credit_limit ? 'limit ' + kes(a.credit_limit) : ''].concat(extra || []).filter(Boolean).join(' · '))}</span></span>
       <b class="${b < 0 ? 'owe' : ''}">${loan ? (b < 0 ? 'owes ' + kes(-b) : b > 0 ? kes(b) : 'clear') : kes(b)}</b>
     </button></li>`;
+  }
+
+  // Week by week (Monday to Sunday) in the month shown: out, with a bar, and in.
+  function weeksPanel(){
+    const lines = txs.filter(inBook);
+    if (!lines.length) return '';
+    const first = month + '-01', last = month + '-' + String(daysIn(month)).padStart(2, '0');
+    const weeks = [];
+    for (let w = mondayOf(first); w <= last; w = WK.addDays(w, 7)){
+      const from = w < first ? first : w, to = WK.addDays(w, 6) > last ? last : WK.addDays(w, 6);
+      const items = lines.filter(t => { const d = localDay(t.occurred_at); return d >= from && d <= to; });
+      weeks.push({ from, to, out: outOf(items), inn: inOf(items), now: WK.isoDate() >= from && WK.isoDate() <= to });
+    }
+    const max = Math.max(...weeks.map(w => w.out), 1);
+    const span = w => WK.fmtDate(w.from, { day: 'numeric', month: 'short' }) + (w.to !== w.from ? '–' + WK.parseDate(w.to).getDate() : '');
+    return `<section class="panel"><h2>Week by week</h2>
+      <ul class="m-bars m-weeks">${weeks.map(w => `<li title="${esc(span(w))}: out ${kes(w.out)}, in ${kes(w.inn)}"${w.now ? ' class="is-now"' : ''}>
+        <span class="m-bar-name">${esc(span(w))}</span>
+        <span class="m-bar-track">${w.out ? `<i style="width:${(w.out / max * 100).toFixed(1)}%"></i>` : ''}</span>
+        <span class="m-bar-val">${w.from > WK.isoDate() ? '<span class="muted">—</span>' : kes(w.out)}${w.inn ? `<span class="muted small"> · in ${kesShort(w.inn)}</span>` : ''}</span></li>`).join('')}</ul>
+      <p class="muted small">Out each week, Monday to Sunday, with what came in.</p></section>`;
   }
 
   // The named bills and payees: this month against their usual (the last six months' average).
@@ -334,7 +363,7 @@
   function biggestPanel(){
     const big = txs.filter(t => t.kind === 'expense' && t.source !== 'adjust' && inBook(t)).sort((a, b) => num(b.amount) - num(a.amount)).slice(0, 5);
     if (!big.length) return '';
-    return `<section class="panel"><h2>Biggest this month</h2><ul class="m-list m-list-plain">${big.map(txLine).join('')}</ul></section>`;
+    return `<section class="panel"><h2>Biggest this month</h2><ul class="m-list m-list-plain">${big.map(t => txLine(t, true)).join('')}</ul></section>`;
   }
 
   // ---- Transactions ----
@@ -347,9 +376,14 @@
       (!filt.label || t.label_id === filt.label) && inBook(t));
   }
   function listHtml(){
-    const list = shownTx();
+    const list = shownTx().slice();
+    const byAmount = order === 'big' || order === 'small';
+    if (order === 'old') list.reverse();
+    else if (byAmount) list.sort((a, b) => (order === 'big' ? -1 : 1) * (num(a.amount) + num(a.fee) - num(b.amount) - num(b.fee)));
+    // Groups by day or by week (Monday to Sunday); sorted by amount it's one list.
     const days = [];
-    list.forEach(t => { const d = localDay(t.occurred_at); let g = days[days.length - 1]; if (!g || g.d !== d){ g = { d, items: [] }; days.push(g); } g.items.push(t); });
+    if (byAmount) days.push({ flat: true, items: list });
+    else list.forEach(t => { const day = localDay(t.occurred_at), d = group === 'week' ? mondayOf(day) : day; let g = days[days.length - 1]; if (!g || g.d !== d){ g = { d, items: [] }; days.push(g); } g.items.push(t); });
     const out = list.filter(t => t.kind === 'expense' && t.source !== 'adjust').reduce((a, t) => a + num(t.amount), 0) + list.filter(t => t.source !== 'adjust').reduce((a, t) => a + num(t.fee), 0);
     const inn = list.filter(t => t.kind === 'income' && t.source !== 'adjust').reduce((a, t) => a + num(t.amount) - num(t.fee), 0);
     const opt = (v, l, cur) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`;
@@ -360,19 +394,27 @@
         <select id="mf-category" aria-label="Category">${opt('', 'All categories', filt.category)}${cats.filter(inBook).map(c => opt(c.id, catLabel(c), filt.category)).join('')}${opt('none', 'Uncategorised', filt.category)}</select>
         <select id="mf-kind" aria-label="Kind">${opt('', 'Everything', filt.kind)}${opt('expense', 'Spent', filt.kind)}${opt('income', 'Received', filt.kind)}${opt('transfer', 'Moved', filt.kind)}</select>
         ${labels.length ? `<select id="mf-label" aria-label="Label">${opt('', 'All labels', filt.label)}${labels.filter(inBook).map(l => opt(l.id, (l.icon ? l.icon + ' ' : '') + l.name, filt.label)).join('')}</select>` : ''}
+        <select id="mf-order" aria-label="Order">${opt('new', 'Newest first', order)}${opt('old', 'Oldest first', order)}${opt('big', 'Biggest first', order)}${opt('small', 'Smallest first', order)}</select>
+        ${byAmount ? '' : `<select id="mf-group" aria-label="Group">${opt('day', 'By day', group)}${opt('week', 'By week', group)}</select>`}
         <button type="button" class="btn ghost small" id="mf-csv">CSV</button>
       </div>
       <p class="muted small">${found ? `${list.length} found in every month${found.length >= 300 ? ' (the newest 300)' : ''}` : `${list.length} line${list.length === 1 ? '' : 's'} in ${esc(monthName(month, { month: 'long' }))}`} · out ${kes(out)} · in ${kes(inn)}</p>
-      ${days.length ? days.map(g => {
-        const dayOut = g.items.filter(t => t.kind === 'expense').reduce((a, t) => a + num(t.amount) + num(t.fee), 0);
-        return `<div class="m-day"><h3><span>${esc(WK.fmtDate(g.d, { weekday: 'short', day: 'numeric', month: 'short', year: found ? 'numeric' : undefined }))}</span>${dayOut ? `<span class="muted small">${kes(dayOut)} out</span>` : ''}</h3>
-          <ul class="m-list">${g.items.map(txLine).join('')}</ul></div>`; }).join('')
+      ${list.length ? days.map(g => {
+        const o = outOf(g.items), i = inOf(g.items);
+        const sums = `${o ? `<span class="muted small">${kes(o)} out${i ? ` · ${kes(i)} in` : ''}</span>` : i ? `<span class="muted small">${kes(i)} in</span>` : ''}`;
+        const title = g.flat ? (order === 'big' ? 'Biggest first' : 'Smallest first')
+          : group === 'week' ? 'Week of ' + WK.fmtDate(g.d, { day: 'numeric', month: 'short' }) + ' – ' + WK.fmtDate(WK.addDays(g.d, 6), { day: 'numeric', month: 'short', year: found ? 'numeric' : undefined })
+          : WK.fmtDate(g.d, { weekday: 'short', day: 'numeric', month: 'short', year: found ? 'numeric' : undefined });
+        return `<div class="m-day"><h3><span>${esc(title)}</span>${sums}</h3>
+          <ul class="m-list">${g.items.map(t => txLine(t, g.flat || group === 'week')).join('')}</ul></div>`; }).join('')
       : `<p class="empty">${found || filt.account || filt.category || filt.kind ? 'Nothing matches.' : 'Nothing logged this month yet. “+ Add” logs the first line.'}</p>`}`;
   }
 
-  function txLine(t){
+  // withDate: the day goes in too (lists not grouped by day).
+  function txLine(t, withDate){
     const c = cat(t.category_id);
-    const time = new Date(t.occurred_at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    const time = (withDate === true ? WK.fmtDate(localDay(t.occurred_at), { weekday: 'short', day: 'numeric', month: 'short' }) + ', ' : '') +
+      new Date(t.occurred_at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
     const l = lab(t.label_id);
     const title = t.kind === 'transfer' ? `${accName(t.account_id)} → ${accName(t.to_account_id)}` : l ? l.name : (t.payee || catLabel(c));
     const sub = [t.kind === 'transfer' ? (t.payee || 'Moved') : (t.payee || l) ? catLabel(c) : '', l && t.payee ? t.payee : '', t.kind !== 'transfer' ? accName(t.account_id) : '', time, t.note].filter(Boolean).join(' · ');
@@ -566,6 +608,8 @@
     if ($('mf-q')){
       $('mf-q').oninput = () => { filt.q = $('mf-q').value; clearTimeout(searchTimer); searchTimer = setTimeout(async () => { await search(); render(); const q = $('mf-q'); if (q){ q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }, 350); };
       ['account', 'category', 'kind', 'label'].forEach(k => { if ($('mf-' + k)) $('mf-' + k).onchange = e => { filt[k] = e.target.value; render(); }; });
+      $('mf-order').onchange = e => { order = e.target.value; WK.store('wk_money_order', order); render(); };
+      if ($('mf-group')) $('mf-group').onchange = e => { group = e.target.value; WK.store('wk_money_group', group); render(); };
       $('mf-csv').onclick = csv;
     }
     if ($('acc-add')) $('acc-add').onclick = () => openAccount(null);
