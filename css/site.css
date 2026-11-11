@@ -1300,3 +1300,20 @@ body.is-offline .offline-note{display:block;}
   .m-filters select{flex:1 1 40%;}
   .m-trend .m-axis{font-size:15px;}
 }
+
+/* Money: Personal / Business, and labels */
+.money-book{width:max-content;max-width:100%;margin-bottom:8px;}
+.money-book button[aria-checked="true"]{background:var(--accent);color:var(--accent-ink);}
+.m-tag.m-biz{border-color:var(--gold);color:var(--gold-ink);}
+.seg-book span{font-size:13px;padding:5px 10px;}
+.m-cats .nb-kind,.m-labels .nb-kind{flex:0 0 auto;}
+.m-cats .nb-kind.on,.m-labels .nb-kind.on{border-color:var(--gold);color:var(--gold-ink);}
+.m-labels{list-style:none;margin:0 0 8px;padding:0;}
+.m-labels li{border-bottom:1px solid var(--line);padding:6px 0;display:grid;gap:4px;}
+.m-labels li.is-hidden{opacity:.5;}
+.m-lab-top{display:flex;align-items:center;gap:6px;}
+.m-labels input{border-color:transparent;background:transparent;padding:6px;}
+.m-labels input:focus{border-color:var(--line);background:var(--bg);}
+.m-lab-match{font-size:13px;color:var(--muted);}
+.m-lab-pick{display:flex;gap:6px;flex-wrap:wrap;}
+.m-lab-pick select{width:auto;flex:1 1 160px;font-size:13px;padding:5px 8px;}

@@ -16,19 +16,24 @@
   const { $, esc } = WK;
   const BUCKET = 'receipts';
 
-  let accounts = [], cats = [], balances = {}, monthly = [], txs = [], payees = new Map();
+  let accounts = [], cats = [], balances = {}, monthly = [], txs = [], payees = new Map(), labels = [];
+  // Personal, Business, or both ('all'): every total, list and chart follows it.
+  let book = WK.store('wk_money_book') || 'all';
   let missing = false;
   let month = WK.isoDate().slice(0, 7);
   let view = WK.store('wk_money_view') || 'overview';
-  const filt = { q: '', account: '', category: '', kind: '' };
+  const filt = { q: '', account: '', category: '', kind: '', label: '' };
   let found = null;          // a search over every month, or null
   let searchTimer;
   let showHidden = false;
 
   WK.section({ name: 'money', label: 'Money', icon: 'money', load, render,
-    reset(){ accounts = []; cats = []; balances = {}; monthly = []; txs = []; payees = new Map(); missing = false; found = null; } });
+    reset(){ accounts = []; cats = []; balances = {}; monthly = []; txs = []; payees = new Map(); labels = []; missing = false; found = null; } });
 
-  const VIEWS = [['overview', 'Overview'], ['list', 'Transactions'], ['accounts', 'Accounts'], ['categories', 'Categories']];
+  const VIEWS = [['overview', 'Overview'], ['list', 'Transactions'], ['accounts', 'Accounts'], ['categories', 'Categories & labels']];
+  const BOOKS = [['all', 'All'], ['personal', 'Personal'], ['business', 'Business']];
+  const bookOf = x => (x && x.book) || 'personal';
+  const inBook = x => book === 'all' || bookOf(x) === book;
   const KINDS = { mpesa: 'M-Pesa', cash: 'Cash', bank: 'Bank', card: 'Card', savings: 'Savings', loan: 'Loan' };
   const isMissing = e => e && (e.code === 'PGRST205' || e.code === '42P01');
 
@@ -50,7 +55,14 @@
   const cat = id => cats.find(c => c.id === id);
   const accName = id => { const a = acc(id); return a ? a.name : '—'; };
   const catLabel = c => c ? `${c.icon ? c.icon + ' ' : ''}${c.name}` : 'Uncategorised';
-  const liveAccounts = () => accounts.filter(a => !a.archived);
+  const liveAccounts = () => accounts.filter(a => !a.archived && inBook(a));
+  const lab = id => labels.find(l => l.id === id);
+  // The label whose words appear in this payee or note ("KPLC", an account number).
+  function matchLabel(...texts){
+    const t = texts.join(' ').toLowerCase();
+    if (!t.trim()) return null;
+    return labels.find(l => !l.archived && (l.matches || []).some(m => { m = String(m).trim().toLowerCase(); return m && t.includes(m); })) || null;
+  }
 
   // ---------------- Loading ----------------
   async function load(){
@@ -63,8 +75,15 @@
     missing = false;
     accounts = a.data || []; cats = c.data || [];
     if (!accounts.length) return;
-    await Promise.all([loadBalances(), loadMonthly(), loadMonth(), loadPayees()]);
+    await Promise.all([loadBalances(), loadMonthly(), loadMonth(), loadPayees(), loadLabels()]);
   }
+  // Labels (sql/14); without that file there are none and no book split.
+  async function loadLabels(){
+    const { data, error } = await WK.db.from('money_labels').select('*').order('sort').order('created_at');
+    labels = error ? [] : data || [];
+    hasBooks = !error;
+  }
+  let hasBooks = false;
   async function loadBalances(){
     const { data, error } = await WK.db.from('money_balances').select('*');
     if (error) throw error;
@@ -110,12 +129,13 @@
   // ---------------- Totals ----------------
   // A month from the money_monthly view: received, spent (with every
   // transaction cost) and spending per category. Adjustments are left out.
-  function stats(m){
-    const rows = monthly.filter(r => r.month === m && r.source !== 'adjust');
-    const s = { inn: 0, out: 0, fees: 0, byCat: new Map(), inByCat: new Map(), n: 0 };
+  function stats(m, only){
+    const rows = monthly.filter(r => r.month === m && r.source !== 'adjust' && (only ? bookOf(r) === only : inBook(r)));
+    const s = { inn: 0, out: 0, fees: 0, byCat: new Map(), inByCat: new Map(), byLabel: new Map(), n: 0 };
     rows.forEach(r => {
       s.n += Number(r.n);
       s.fees += num(r.fees);
+      if (r.label_id && r.kind !== 'income') s.byLabel.set(r.label_id, (s.byLabel.get(r.label_id) || 0) + num(r.total) + num(r.fees));
       if (r.kind === 'income'){ s.inn += num(r.total); s.inByCat.set(r.category_id, (s.inByCat.get(r.category_id) || 0) + num(r.total)); }
       if (r.kind === 'expense'){ s.out += num(r.total); s.byCat.set(r.category_id, (s.byCat.get(r.category_id) || 0) + num(r.total)); }
     });
@@ -148,11 +168,13 @@
           <button type="button" class="btn primary" id="mon-add">+ Add</button>
         </div>
       </div>
+      ${hasBooks ? `<div class="subtabs money-book" role="radiogroup" aria-label="Personal or business">${BOOKS.map(([k, l]) => `<button type="button" role="radio" data-book="${k}" aria-checked="${k === book}" aria-current="${k === book}">${l}</button>`).join('')}</div>` : ''}
       <div class="subtabs money-tabs" role="tablist">${VIEWS.map(([k, l]) => `<button type="button" role="tab" data-view="${k}" aria-selected="${k === view}" aria-current="${k === view}">${l}</button>`).join('')}</div>
       <div id="money-body">${view === 'list' ? listHtml() : view === 'accounts' ? accountsHtml() : view === 'categories' ? categoriesHtml() : overviewHtml()}</div>`;
     $('mon-prev').onclick = () => goMonth(-1);
     $('mon-next').onclick = () => goMonth(1);
     $('mon-add').onclick = () => openTx(null);
+    el.querySelectorAll('[data-book]').forEach(b => { b.onclick = () => { book = b.dataset.book; WK.store('wk_money_book', book); filt.category = ''; render(); }; });
     el.querySelectorAll('[data-view]').forEach(b => { b.onclick = () => { view = b.dataset.view; WK.store('wk_money_view', view); render(); }; });
     bindBody(el);
   }
@@ -173,14 +195,19 @@
     const pace = month === now && day < daysIn(month) ? s.spent / day * daysIn(month) : null;
     const change = prev.spent ? Math.round((s.spent - prev.spent) / prev.spent * 100) : null;
     const left = s.inn - s.spent;
+    const biz = book === 'business';
+    // In "All": the business on its own, so its costs aren't lost in the household.
+    const b = book === 'all' && hasBooks ? stats(month, 'business') : null;
+    const bizCard = b && (b.inn || b.spent) ? `<div><span class="muted small">Business ${b.inn - b.spent >= 0 ? 'profit' : 'loss'}</span><b class="${b.inn - b.spent < 0 ? 'owe' : ''}">${kes(Math.abs(b.inn - b.spent))}</b><span class="muted small">${kes(b.inn)} in · ${kes(b.spent)} costs</span></div>` : '';
     return `
       <div class="bud-sum money-sum">
-        <div><span class="muted small">Received</span><b class="m-in">${kes(s.inn)}</b></div>
-        <div><span class="muted small">Spent</span><b>${kes(s.spent)}</b>${change != null ? `<span class="muted small">${change > 0 ? '▲' : change < 0 ? '▼' : ''} ${Math.abs(change)}% on ${esc(monthName(shift(month, -1), { month: 'long' }))}</span>` : ''}</div>
-        <div><span class="muted small">${left >= 0 ? 'Left over' : 'Overspent'}</span><b class="${left < 0 ? 'owe' : ''}">${kes(Math.abs(left))}</b>${s.inn ? `<span class="muted small">${Math.round(left / s.inn * 100)}% of what came in</span>` : ''}</div>
+        <div><span class="muted small">${biz ? 'Money in' : 'Received'}</span><b class="m-in">${kes(s.inn)}</b></div>
+        <div><span class="muted small">${biz ? 'Costs' : 'Spent'}</span><b>${kes(s.spent)}</b>${change != null ? `<span class="muted small">${change > 0 ? '▲' : change < 0 ? '▼' : ''} ${Math.abs(change)}% on ${esc(monthName(shift(month, -1), { month: 'long' }))}</span>` : ''}</div>
+        <div><span class="muted small">${biz ? (left >= 0 ? 'Profit' : 'Loss') : left >= 0 ? 'Left over' : 'Overspent'}</span><b class="${left < 0 ? 'owe' : ''}">${kes(Math.abs(left))}</b>${s.inn ? `<span class="muted small">${Math.round(left / s.inn * 100)}% of what came in</span>` : ''}</div>
         <div><span class="muted small">Transaction costs</span><b>${kes(s.fees)}</b></div>
         ${pace != null ? `<div><span class="muted small">At this pace, by month end</span><b>${kes(pace)}</b><span class="muted small">${kes(s.spent / day)} a day</span></div>` : ''}
-        <div><span class="muted small">Net worth</span><b class="${w.net < 0 ? 'owe' : ''}">${kes(w.net)}</b>${w.owed ? `<span class="muted small">${kes(w.has)} held · ${kes(w.owed)} owed</span>` : ''}</div>
+        <div><span class="muted small">${biz ? 'Business accounts' : 'Net worth'}</span><b class="${w.net < 0 ? 'owe' : ''}">${kes(w.net)}</b>${w.owed ? `<span class="muted small">${kes(w.has)} held · ${kes(w.owed)} owed</span>` : ''}</div>
+        ${bizCard}
       </div>
 
       <div class="money-grid">
@@ -189,8 +216,10 @@
           <ul class="money-accounts">${liveAccounts().map(a => accountLine(a)).join('')}</ul>
         </section>
 
+        ${labelsPanel(s)}
+
         <section class="panel money-wide">
-          <h2>Spending by category</h2>
+          <h2>${biz ? 'Costs' : 'Spending'} by category</h2>
           ${categoryBars(s)}
         </section>
 
@@ -199,7 +228,7 @@
           ${trendChart()}
         </section>
 
-        ${budgetPanel()}
+        ${biz ? '' : budgetPanel()}
         ${payeesPanel()}
         ${biggestPanel()}
       </div>`;
@@ -213,9 +242,19 @@
     </button></li>`;
   }
 
+  // The named bills and payees: this month against their usual (the last six months' average).
+  function labelsPanel(s){
+    const shown = labels.filter(l => !l.archived && inBook(l));
+    if (!shown.length) return '';
+    const usual = id => { let t = 0, n = 0; for (let i = 1; i <= 6; i++){ const v = stats(shift(month, -i)).byLabel.get(id) || 0; if (v){ t += v; n++; } } return n ? t / n : 0; };
+    return `<section class="panel"><h2>Bills & labels <button type="button" class="link small" data-view-go="categories">Edit</button></h2>
+      <ul class="mini-list m-plan">${shown.map(l => { const v = s.byLabel.get(l.id) || 0, u = usual(l.id);
+        return `<li><button type="button" class="link" data-label="${l.id}">${esc((l.icon ? l.icon + ' ' : '') + (l.name || 'Label'))}</button><span class="small ${u && v > u * 1.15 ? 'review-bad' : v ? '' : 'muted'}">${v ? kes(v) : '—'}${u ? ` <span class="muted">· usually ${kesShort(u)}</span>` : ''}</span></li>`; }).join('')}</ul></section>`;
+  }
+
   // One bar per category: what was spent, against the limit if it has one.
   function categoryBars(s){
-    const lines = cats.filter(c => c.kind === 'expense')
+    const lines = cats.filter(c => c.kind === 'expense' && inBook(c))
       .map(c => ({ c, v: s.byCat.get(c.id) || 0, lim: c.monthly_limit == null ? null : num(c.monthly_limit) }))
       .filter(x => x.v || (x.lim && !x.c.archived));
     if (s.byCat.get(null)) lines.push({ c: null, v: s.byCat.get(null), lim: null });
@@ -285,7 +324,7 @@
 
   function payeesPanel(){
     const by = new Map();
-    txs.filter(t => t.kind === 'expense' && t.source !== 'adjust').forEach(t => { const k = (t.payee || '').trim() || '(no payee)'; by.set(k, (by.get(k) || 0) + num(t.amount)); });
+    txs.filter(t => t.kind === 'expense' && t.source !== 'adjust' && inBook(t)).forEach(t => { const k = (t.payee || '').trim() || '(no payee)'; by.set(k, (by.get(k) || 0) + num(t.amount)); });
     const top = [...by].sort((a, b) => b[1] - a[1]).slice(0, 6);
     if (!top.length) return '';
     return `<section class="panel"><h2>Paid the most</h2>
@@ -293,7 +332,7 @@
   }
 
   function biggestPanel(){
-    const big = txs.filter(t => t.kind === 'expense' && t.source !== 'adjust').sort((a, b) => num(b.amount) - num(a.amount)).slice(0, 5);
+    const big = txs.filter(t => t.kind === 'expense' && t.source !== 'adjust' && inBook(t)).sort((a, b) => num(b.amount) - num(a.amount)).slice(0, 5);
     if (!big.length) return '';
     return `<section class="panel"><h2>Biggest this month</h2><ul class="m-list m-list-plain">${big.map(txLine).join('')}</ul></section>`;
   }
@@ -304,7 +343,8 @@
     return list.filter(t =>
       (!filt.account || t.account_id === filt.account || t.to_account_id === filt.account) &&
       (!filt.category || (filt.category === 'none' ? !t.category_id && t.kind !== 'transfer' : t.category_id === filt.category)) &&
-      (!filt.kind || t.kind === filt.kind));
+      (!filt.kind || t.kind === filt.kind) &&
+      (!filt.label || t.label_id === filt.label) && inBook(t));
   }
   function listHtml(){
     const list = shownTx();
@@ -317,8 +357,9 @@
       <div class="m-filters">
         <input type="search" id="mf-q" value="${esc(filt.q)}" placeholder="Search every month: payee, note, M-Pesa code" aria-label="Search">
         <select id="mf-account" aria-label="Account">${opt('', 'All accounts', filt.account)}${accounts.map(a => opt(a.id, a.name, filt.account)).join('')}</select>
-        <select id="mf-category" aria-label="Category">${opt('', 'All categories', filt.category)}${cats.map(c => opt(c.id, catLabel(c), filt.category)).join('')}${opt('none', 'Uncategorised', filt.category)}</select>
+        <select id="mf-category" aria-label="Category">${opt('', 'All categories', filt.category)}${cats.filter(inBook).map(c => opt(c.id, catLabel(c), filt.category)).join('')}${opt('none', 'Uncategorised', filt.category)}</select>
         <select id="mf-kind" aria-label="Kind">${opt('', 'Everything', filt.kind)}${opt('expense', 'Spent', filt.kind)}${opt('income', 'Received', filt.kind)}${opt('transfer', 'Moved', filt.kind)}</select>
+        ${labels.length ? `<select id="mf-label" aria-label="Label">${opt('', 'All labels', filt.label)}${labels.filter(inBook).map(l => opt(l.id, (l.icon ? l.icon + ' ' : '') + l.name, filt.label)).join('')}</select>` : ''}
         <button type="button" class="btn ghost small" id="mf-csv">CSV</button>
       </div>
       <p class="muted small">${found ? `${list.length} found in every month${found.length >= 300 ? ' (the newest 300)' : ''}` : `${list.length} line${list.length === 1 ? '' : 's'} in ${esc(monthName(month, { month: 'long' }))}`} · out ${kes(out)} · in ${kes(inn)}</p>
@@ -332,14 +373,15 @@
   function txLine(t){
     const c = cat(t.category_id);
     const time = new Date(t.occurred_at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-    const title = t.kind === 'transfer' ? `${accName(t.account_id)} → ${accName(t.to_account_id)}` : (t.payee || catLabel(c));
-    const sub = [t.kind === 'transfer' ? (t.payee || 'Moved') : t.payee ? catLabel(c) : '', t.kind !== 'transfer' ? accName(t.account_id) : '', time, t.note].filter(Boolean).join(' · ');
+    const l = lab(t.label_id);
+    const title = t.kind === 'transfer' ? `${accName(t.account_id)} → ${accName(t.to_account_id)}` : l ? l.name : (t.payee || catLabel(c));
+    const sub = [t.kind === 'transfer' ? (t.payee || 'Moved') : (t.payee || l) ? catLabel(c) : '', l && t.payee ? t.payee : '', t.kind !== 'transfer' ? accName(t.account_id) : '', time, t.note].filter(Boolean).join(' · ');
     const sign = t.kind === 'income' ? '+' : t.kind === 'expense' ? '−' : '';
     return `<li><button type="button" class="m-tx k-${t.kind}${t.source === 'adjust' ? ' is-adjust' : ''}" data-tx="${t.id}">
       <span class="m-ico" aria-hidden="true">${t.kind === 'transfer' ? '⇄' : c && c.icon ? esc(c.icon) : t.kind === 'income' ? '＋' : '•'}</span>
       <span class="m-what"><b>${esc(title)}</b><span class="muted small">${esc(sub)}</span></span>
       <span class="m-amt"><b>${sign}${kes(t.amount)}</b>${num(t.fee) ? `<span class="muted small">+${kes(t.fee)} cost</span>` : ''}
-        ${t.source === 'sms' ? '<span class="m-tag" title="From an M-Pesa message">M-Pesa</span>' : ''}${t.receipt_path ? '<span class="m-tag" title="Has a receipt">📎</span>' : ''}${t.source === 'adjust' ? '<span class="m-tag">adjustment</span>' : ''}</span>
+        ${t.source === 'sms' ? '<span class="m-tag" title="From an M-Pesa message">M-Pesa</span>' : ''}${t.receipt_path ? '<span class="m-tag" title="Has a receipt">📎</span>' : ''}${t.source === 'adjust' ? '<span class="m-tag">adjustment</span>' : ''}${book === 'all' && bookOf(t) === 'business' ? '<span class="m-tag m-biz">Business</span>' : ''}</span>
     </button></li>`;
   }
 
@@ -357,13 +399,13 @@
   function csv(){
     const rows = shownTx();
     const cell = v => { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
-    const head = ['date', 'time', 'kind', 'amount', 'cost', 'account', 'to account', 'category', 'payee', 'note', 'm-pesa code', 'source'];
+    const head = ['date', 'time', 'book', 'kind', 'amount', 'cost', 'account', 'to account', 'category', 'label', 'payee', 'note', 'm-pesa code', 'source'];
     const lines = rows.map(t => { const d = new Date(t.occurred_at);
-      return [localDay(t.occurred_at), d.toTimeString().slice(0, 5), t.kind, t.amount, t.fee, accName(t.account_id), t.to_account_id ? accName(t.to_account_id) : '', t.kind === 'transfer' ? '' : catLabel(cat(t.category_id)), t.payee, t.note, t.ref, t.source].map(cell).join(','); });
+      return [localDay(t.occurred_at), d.toTimeString().slice(0, 5), bookOf(t), t.kind, t.amount, t.fee, accName(t.account_id), t.to_account_id ? accName(t.to_account_id) : '', t.kind === 'transfer' ? '' : catLabel(cat(t.category_id)), (lab(t.label_id) || {}).name || '', t.payee, t.note, t.ref, t.source].map(cell).join(','); });
     const blob = new Blob([[head.join(','), ...lines].join('\n')], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `money-${found ? 'search' : month}.csv`;
+    a.download = `money-${book === 'all' ? '' : book + '-'}${found ? 'search' : month}.csv`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
   }
@@ -371,8 +413,8 @@
   // ---- Accounts ----
   function accountsHtml(){
     const w = worth();
-    const shown = accounts.filter(a => showHidden || !a.archived);
-    const hidden = accounts.filter(a => a.archived).length;
+    const shown = accounts.filter(a => (showHidden || !a.archived) && inBook(a));
+    const hidden = accounts.filter(a => a.archived && inBook(a)).length;
     return `
       <div class="bud-sum">
         <div><span class="muted small">Held</span><b>${kes(w.has)}</b></div>
@@ -392,7 +434,7 @@
   function categoriesHtml(){
     const s = stats(month);
     const box = kind => {
-      const list = cats.filter(c => c.kind === kind && (showHidden || !c.archived));
+      const list = cats.filter(c => c.kind === kind && (showHidden || !c.archived) && inBook(c));
       return `<section class="panel${kind === 'expense' ? ' money-wide' : ''}">
         <h2>${kind === 'expense' ? 'Spending' : 'Income'}</h2>
         <ul class="m-cats">${list.map(c => `
@@ -401,15 +443,115 @@
             <input class="m-cat-name" value="${esc(c.name)}" placeholder="Category" aria-label="Name">
             ${kind === 'expense' ? `<input class="m-cat-limit" inputmode="numeric" value="${c.monthly_limit == null ? '' : esc(c.monthly_limit)}" placeholder="no limit" aria-label="Monthly limit in KES" title="Monthly limit (KES)">` : ''}
             <span class="muted small m-cat-sum">${kes((kind === 'expense' ? s.byCat : s.inByCat).get(c.id) || 0)}</span>
+            ${hasBooks ? `<button type="button" class="nb-kind${bookOf(c) === 'business' ? ' on' : ''}" data-cat-book title="Personal or business (tap to switch)">${bookOf(c) === 'business' ? 'business' : 'personal'}</button>` : ''}
             <button type="button" class="nb-x" data-cat-hide title="${c.archived ? 'Show again' : 'Hide (old lines keep it)'}" aria-label="${c.archived ? 'Show again' : 'Hide'}">${c.archived ? '↺' : '✕'}</button>
           </li>`).join('')}</ul>
         <button type="button" class="btn ghost small" data-cat-add="${kind}">+ Category</button>
       </section>`;
     };
     const hidden = cats.filter(c => c.archived).length;
-    return `<div class="money-grid">${box('expense')}${box('income')}</div>
+    const noBizCats = book === 'business' && !cats.some(c => bookOf(c) === 'business');
+    return `${noBizCats ? `<div class="panel money-setup"><p>No business categories yet.</p><div class="toolbar"><button type="button" class="btn primary" id="biz-seed">Add business categories</button></div>
+        <p class="muted small">Stock & supplies, rent, wages, transport, marketing, equipment, utilities, licences and fees; sales and services for money in.</p></div>` : ''}
+      <div class="money-grid">${box('expense')}${box('income')}${hasBooks ? labelsHtml(s) : ''}</div>
       <p class="muted small bud-key">The limit is KES a month; Overview marks a category that goes over. The total beside each is ${esc(monthName(month, { month: 'long' }))}.
       ${hidden ? `<button type="button" class="link small" id="cat-hidden">${showHidden ? 'Hide' : 'Show'} ${hidden} hidden</button>` : ''}</p>`;
+  }
+
+  // Labels: a named bill or payee, found by its words (paybill or till name, account or phone number).
+  function labelsHtml(s){
+    const list = labels.filter(l => (showHidden || !l.archived) && inBook(l));
+    const catOpts = l => `<option value="">No category</option>` + cats.filter(c => c.kind === 'expense' && (!c.archived || c.id === l.category_id) && bookOf(c) === bookOf(l))
+      .map(c => `<option value="${c.id}"${c.id === l.category_id ? ' selected' : ''}>${esc(catLabel(c))}</option>`).join('');
+    const budOpts = l => `<option value="">No budget item</option>` + (WK.budgetItems ? WK.budgetItems() : [])
+      .map(i => `<option value="${i.id}"${i.id === l.budget_item_id ? ' selected' : ''}>${esc(i.name || 'Item')}</option>`).join('');
+    return `<section class="panel money-wide">
+      <h2>Labels <span class="muted small">bills and payees by name</span></h2>
+      <p class="muted small">A line whose payee or note has one of a label's words (a paybill name like KPLC, an account number, a till or phone number) gets the label, with its category, book and budget item. Phone M-Pesa lines too.</p>
+      <ul class="m-labels">${list.map(l => `
+        <li data-labrow="${l.id}" class="${l.archived ? 'is-hidden' : ''}">
+          <div class="m-lab-top">
+            <input class="m-cat-icon" data-f="icon" value="${esc(l.icon)}" maxlength="4" aria-label="Icon" placeholder="🏷️">
+            <input class="m-cat-name" data-f="name" value="${esc(l.name)}" placeholder="Electricity (house)" aria-label="Name">
+            <span class="muted small m-cat-sum">${kes(s.byLabel.get(l.id) || 0)}</span>
+            <button type="button" class="nb-kind${bookOf(l) === 'business' ? ' on' : ''}" data-lab-book title="Personal or business">${bookOf(l)}</button>
+            <button type="button" class="nb-x" data-lab-hide aria-label="${l.archived ? 'Show again' : 'Hide'}">${l.archived ? '↺' : '✕'}</button>
+          </div>
+          <input class="m-lab-match" data-f="matches" value="${esc((l.matches || []).join(', '))}" placeholder="Words that find it: KPLC, 37188812345" aria-label="Words that find it">
+          <div class="m-lab-pick"><select data-f="category_id" aria-label="Category">${catOpts(l)}</select><select data-f="budget_item_id" aria-label="Budget item">${budOpts(l)}</select></div>
+        </li>`).join('')}</ul>
+      <div class="toolbar"><button type="button" class="btn ghost small" id="lab-add">+ Label</button>
+        <button type="button" class="btn ghost small" id="lab-apply" title="Give the label to earlier lines that match">Label earlier lines</button></div>
+    </section>`;
+  }
+
+  const labTimers = {};
+  function bindLabels(el){
+    el.querySelectorAll('[data-labrow]').forEach(li => {
+      const l = lab(li.dataset.labrow);
+      const save = now => {
+        clearTimeout(labTimers[l.id]);
+        const run = async () => {
+          const { error } = await WK.db.from('money_labels').update({ name: l.name, icon: l.icon, matches: l.matches, category_id: l.category_id || null,
+            budget_item_id: l.budget_item_id || null, book: bookOf(l), archived: l.archived, updated_at: new Date().toISOString() }).eq('id', l.id);
+          if (error) WK.toast('Not saved: ' + error.message);
+        };
+        if (now){ run(); render(); } else labTimers[l.id] = setTimeout(run, 600);
+      };
+      li.querySelectorAll('[data-f]').forEach(inp => {
+        const f = inp.dataset.f;
+        const set = () => {
+          if (f === 'matches') l.matches = inp.value.split(',').map(x => x.trim()).filter(Boolean);
+          else if (f === 'icon') l.icon = inp.value.trim();
+          else l[f] = inp.value || (f === 'name' ? '' : null);
+        };
+        if (inp.tagName === 'SELECT') inp.onchange = () => { set(); save(true); };
+        else inp.oninput = () => { set(); save(); };
+      });
+      li.querySelector('[data-lab-book]').onclick = () => { l.book = bookOf(l) === 'business' ? 'personal' : 'business'; if (l.category_id && bookOf(cat(l.category_id)) !== l.book) l.category_id = null; save(true); };
+      li.querySelector('[data-lab-hide]').onclick = () => { l.archived = !l.archived; save(true); };
+    });
+    if ($('lab-add')) $('lab-add').onclick = async () => {
+      const { data, error } = await WK.db.from('money_labels').insert([{ name: '', book: book === 'business' ? 'business' : 'personal', sort: labels.reduce((m, l) => Math.max(m, l.sort || 0), 0) + 1 }]).select().single();
+      if (error){ WK.toast('Not added: ' + error.message); return; }
+      labels.push(data); render();
+      const inp = $('section-money').querySelector(`[data-labrow="${data.id}"] [data-f=name]`);
+      if (inp) inp.focus();
+    };
+    if ($('lab-apply')) $('lab-apply').onclick = applyLabels;
+    if ($('biz-seed')) $('biz-seed').onclick = seedBusiness;
+  }
+
+  // Earlier lines (the last year) with no label get the one that matches them.
+  async function applyLabels(){
+    const since = new Date(); since.setFullYear(since.getFullYear() - 1);
+    const { data, error } = await WK.db.from('money_tx').select('id, payee, note, kind, category_id, book, budget_item_id').is('label_id', null).neq('kind', 'transfer').gte('occurred_at', since.toISOString()).limit(2000);
+    if (error){ WK.toast('Could not read the lines: ' + error.message); return; }
+    let n = 0;
+    for (const t of data || []){
+      const l = matchLabel(t.payee, t.note);
+      if (!l) continue;
+      const patch = { label_id: l.id, book: bookOf(l), updated_at: new Date().toISOString() };
+      if (!t.category_id && l.category_id && t.kind === 'expense') patch.category_id = l.category_id;
+      const { error: e2 } = await WK.db.from('money_tx').update(patch).eq('id', t.id);
+      if (!e2) n++;
+    }
+    WK.toast(n ? `${n} earlier line${n === 1 ? '' : 's'} labelled.` : 'No unlabelled lines match a label.');
+    await reloadAll();
+  }
+
+  const BUSINESS_CATS = {
+    expense: [['📦', 'Stock & supplies'], ['🏢', 'Rent & premises'], ['👷', 'Wages & casuals'], ['🚚', 'Transport & delivery'], ['📣', 'Marketing'],
+      ['🛠️', 'Equipment & repairs'], ['💡', 'Business utilities'], ['📄', 'Licences, KRA & fees'], ['🧾', 'Other business costs']],
+    income: [['💰', 'Sales'], ['🤝', 'Services'], ['➕', 'Other business income']]
+  };
+  async function seedBusiness(){
+    const rows = Object.entries(BUSINESS_CATS).flatMap(([kind, list]) => list.map(([icon, name], i) => ({ kind, icon, name, book: 'business', sort: 100 + i })));
+    const { data, error } = await WK.db.from('money_categories').insert(rows).select();
+    if (error){ WK.toast('Not added: ' + error.message); return; }
+    cats = cats.concat(data || []);
+    render();
+    WK.toast('Business categories added. Add a business account too if the business has its own M-Pesa, till or cash.');
   }
 
   function bindBody(el){
@@ -418,17 +560,19 @@
     el.querySelectorAll('[data-view-go]').forEach(b => { b.onclick = () => { view = b.dataset.viewGo; WK.store('wk_money_view', view); render(); }; });
     el.querySelectorAll('[data-go]').forEach(b => { b.onclick = () => WK.show(b.dataset.go); });
     el.querySelectorAll('[data-cat]').forEach(li => { li.style.cursor = 'pointer'; li.onclick = () => { filt.category = li.dataset.cat; view = 'list'; render(); }; });
+    el.querySelectorAll('[data-label]').forEach(b => { b.onclick = () => { filt.label = b.dataset.label; filt.category = ''; view = 'list'; render(); }; });
     el.querySelectorAll('[data-payee]').forEach(b => { b.onclick = async () => { filt.q = b.dataset.payee; view = 'list'; await search(); render(); }; });
     el.querySelectorAll('[data-month]').forEach(g => { g.onclick = async () => { if (g.dataset.month === month) return; month = g.dataset.month; await loadMonth(); render(); }; });
     if ($('mf-q')){
       $('mf-q').oninput = () => { filt.q = $('mf-q').value; clearTimeout(searchTimer); searchTimer = setTimeout(async () => { await search(); render(); const q = $('mf-q'); if (q){ q.focus(); q.setSelectionRange(q.value.length, q.value.length); } }, 350); };
-      ['account', 'category', 'kind'].forEach(k => { $('mf-' + k).onchange = e => { filt[k] = e.target.value; render(); }; });
+      ['account', 'category', 'kind', 'label'].forEach(k => { if ($('mf-' + k)) $('mf-' + k).onchange = e => { filt[k] = e.target.value; render(); }; });
       $('mf-csv').onclick = csv;
     }
     if ($('acc-add')) $('acc-add').onclick = () => openAccount(null);
     if ($('acc-hidden')) $('acc-hidden').onclick = () => { showHidden = !showHidden; render(); };
     if ($('cat-hidden')) $('cat-hidden').onclick = () => { showHidden = !showHidden; render(); };
     bindCategories(el);
+    bindLabels(el);
   }
 
   // Categories save as they're typed, like the Budget page.
@@ -439,7 +583,7 @@
       const save = (now) => {
         clearTimeout(catTimers[c.id]);
         const run = async () => {
-          const { error } = await WK.db.from('money_categories').update({ name: c.name, icon: c.icon, monthly_limit: c.monthly_limit, archived: c.archived, updated_at: new Date().toISOString() }).eq('id', c.id);
+          const { error } = await WK.db.from('money_categories').update(Object.assign({ name: c.name, icon: c.icon, monthly_limit: c.monthly_limit, archived: c.archived, updated_at: new Date().toISOString() }, hasBooks ? { book: bookOf(c) } : {})).eq('id', c.id);
           if (error) WK.toast('Not saved: ' + error.message);
         };
         if (now){ run(); render(); } else catTimers[c.id] = setTimeout(run, 600);
@@ -449,11 +593,13 @@
       const lim = li.querySelector('.m-cat-limit');
       if (lim){ lim.oninput = () => { const d = lim.value.replace(/\D/g, ''); if (d !== lim.value) lim.value = d; c.monthly_limit = d === '' ? null : Number(d); save(); }; }
       li.querySelector('[data-cat-hide]').onclick = () => { c.archived = !c.archived; save(true); };
+      const bk = li.querySelector('[data-cat-book]');
+      if (bk) bk.onclick = () => { c.book = bookOf(c) === 'business' ? 'personal' : 'business'; save(true); };
     });
     el.querySelectorAll('[data-cat-add]').forEach(b => { b.onclick = async () => {
       const kind = b.dataset.catAdd;
       const sort = cats.filter(c => c.kind === kind).reduce((m, c) => Math.max(m, c.sort || 0), 0) + 1;
-      const { data, error } = await WK.db.from('money_categories').insert([{ kind, name: '', sort }]).select().single();
+      const { data, error } = await WK.db.from('money_categories').insert([Object.assign({ kind, name: '', sort }, hasBooks ? { book: book === 'business' ? 'business' : 'personal' } : {})]).select().single();
       if (error){ WK.toast('Not added: ' + error.message); return; }
       cats.push(data); render();
       const inp = $('section-money').querySelector(`[data-catrow="${data.id}"] .m-cat-name`);
@@ -512,6 +658,10 @@
       <label><input type="radio" name="tx-kind" value="income"><span>Received</span></label>
       <label><input type="radio" name="tx-kind" value="transfer"><span>Moved</span></label>
     </div>
+    <div class="seg seg-book" role="radiogroup" aria-label="Personal or business" id="tx-books">
+      <label><input type="radio" name="tx-book" value="personal" checked><span>Personal</span></label>
+      <label><input type="radio" name="tx-book" value="business"><span>Business</span></label>
+    </div>
     <div class="row2">
       <label>Amount (KES)<input id="tx-amount" inputmode="decimal" autocomplete="off" required placeholder="0"></label>
       <label>Transaction cost<input id="tx-fee" inputmode="decimal" autocomplete="off" placeholder="0"></label>
@@ -526,7 +676,10 @@
       <label>When<input id="tx-when" type="datetime-local" required></label>
     </div>
     <datalist id="tx-payees"></datalist>
-    <label>Note<input id="tx-note" maxlength="300" placeholder="What it was for"></label>
+    <div class="row2">
+      <label>Note<input id="tx-note" maxlength="300" placeholder="What it was for"></label>
+      <label id="tx-label-wrap" data-not="transfer">Label<select id="tx-label"></select></label>
+    </div>
     <div class="row2" data-only="expense">
       <label>Pays a budget item<select id="tx-budget"></select></label>
       <label>Buys a wish<select id="tx-wish"></select></label>
@@ -547,6 +700,8 @@
 
   let editing = null, receiptGone = false;
   const kindNow = () => dlg.querySelector('input[name=tx-kind]:checked').value;
+  const bookNow = () => hasBooks ? dlg.querySelector('input[name=tx-book]:checked').value : 'personal';
+  const setBook = b => { const r = dlg.querySelector(`input[name=tx-book][value="${b || 'personal'}"]`); if (r) r.checked = true; };
   const opts = (list, cur, empty) => (empty != null ? `<option value="">${esc(empty)}</option>` : '') + list.map(([v, l]) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('');
 
   function fillPickers(t){
@@ -554,18 +709,21 @@
     const live = accounts.filter(a => !a.archived || a.id === t.account_id || a.id === t.to_account_id);
     $('tx-account').innerHTML = opts(live.map(a => [a.id, a.name]), t.account_id || (liveAccounts()[0] || {}).id);
     $('tx-to').innerHTML = opts(live.map(a => [a.id, a.name]), t.to_account_id || (live.find(a => a.id !== $('tx-account').value) || {}).id);
-    const cs = cats.filter(c => c.kind === (k === 'income' ? 'income' : 'expense') && (!c.archived || c.id === t.category_id));
+    const cs = cats.filter(c => c.kind === (k === 'income' ? 'income' : 'expense') && (!c.archived || c.id === t.category_id) && (!hasBooks || bookOf(c) === bookNow() || c.id === t.category_id));
     $('tx-category').innerHTML = opts(cs.map(c => [c.id, catLabel(c)]), t.category_id, 'Uncategorised');
     const items = (WK.budgetItems ? WK.budgetItems() : []).filter(i => i.monthly || !(i.paid || []).includes('once') || i.id === t.budget_item_id);
     $('tx-budget').innerHTML = opts(items.map(i => [i.id, `${i.name || 'Item'}${i.amount != null ? ' — ' + kesShort(i.amount) : ''}`]), t.budget_item_id, '—');
     const wishes = (WK.wishItems ? WK.wishItems() : []).filter(w => !w.got || w.id === t.wishlist_item_id);
     $('tx-wish').innerHTML = opts(wishes.map(w => [w.id, `${w.name || 'Wish'}${w.price != null ? ' — ' + kesShort(w.price) : ''}`]), t.wishlist_item_id, '—');
+    $('tx-label').innerHTML = opts(labels.filter(l => !l.archived || l.id === t.label_id).map(l => [l.id, (l.icon ? l.icon + ' ' : '') + (l.name || 'Label') + (bookOf(l) === 'business' ? ' (business)' : '')]), t.label_id, '—');
     $('tx-payees').innerHTML = [...payees.values()].slice(0, 300).map(p => `<option value="${esc(p.payee)}">`).join('');
   }
   function showKind(){
     const k = kindNow();
     dlg.querySelectorAll('[data-only]').forEach(x => { x.hidden = x.dataset.only !== k; });
     dlg.querySelectorAll('[data-not]').forEach(x => { x.hidden = x.dataset.not === k; });
+    $('tx-books').hidden = !hasBooks;
+    $('tx-label-wrap').hidden = !hasBooks || !labels.length || k === 'transfer';
     $('tx-acc-label').textContent = k === 'income' ? 'Into' : 'From';
     $('tx-payee-label').textContent = k === 'income' ? 'From whom' : k === 'transfer' ? 'Label' : 'Paid to';
     $('tx-payee').placeholder = k === 'income' ? 'Employer, client, person…' : k === 'transfer' ? 'Cash withdrawal, Fuliza repayment…' : 'Shop, person, paybill…';
@@ -589,7 +747,10 @@
     $('tx-file').value = '';
     $('tx-error').textContent = '';
     $('tx-delete').hidden = fresh;
+    // A new line is in the book of the account it's paid from (or the book being looked at).
+    setBook(v.book || (fresh && acc(v.account_id) ? bookOf(acc(v.account_id)) : book === 'business' ? 'business' : 'personal'));
     fillPickers(v);
+    if (fresh && !v.label_id) applyLabel(matchLabel(v.payee || '', v.note || ''), true);
     showKind();
     receiptLink(v.receipt_path);
     dlg.showModal();
@@ -603,10 +764,25 @@
     if (data && data.signedUrl){ a.href = data.signedUrl; a.hidden = false; }
   }
 
-  dlg.querySelectorAll('input[name=tx-kind]').forEach(r => { r.onchange = () => { fillPickers({ account_id: $('tx-account').value, to_account_id: $('tx-to').value }); showKind(); }; });
+  const current = () => ({ account_id: $('tx-account').value, to_account_id: $('tx-to').value, category_id: $('tx-category').value || null,
+    budget_item_id: $('tx-budget').value || null, wishlist_item_id: $('tx-wish').value || null, label_id: $('tx-label').value || null });
+  dlg.querySelectorAll('input[name=tx-kind]').forEach(r => { r.onchange = () => { fillPickers({ account_id: $('tx-account').value, to_account_id: $('tx-to').value, label_id: $('tx-label').value || null }); showKind(); }; });
+  dlg.querySelectorAll('input[name=tx-book]').forEach(r => { r.onchange = () => fillPickers(Object.assign(current(), { category_id: null })); });
+  dlg.querySelector('#tx-account').onchange = () => { if (!editing){ const a = acc($('tx-account').value); if (a && bookOf(a) !== bookNow()){ setBook(bookOf(a)); fillPickers(Object.assign(current(), { category_id: null })); } } };
+  // A label brings its book, category and budget item (filling only what's empty, unless it was just picked).
+  function applyLabel(l, onlyEmpty){
+    if (!l) return;
+    if (!onlyEmpty || !$('tx-label').value) $('tx-label').value = l.id;
+    if (bookOf(l) !== bookNow()){ setBook(bookOf(l)); fillPickers(Object.assign(current(), { category_id: null, label_id: l.id })); }
+    if (l.category_id && (!onlyEmpty || !$('tx-category').value) && [...$('tx-category').options].some(o => o.value === l.category_id)) $('tx-category').value = l.category_id;
+    if (l.budget_item_id && kindNow() === 'expense' && (!onlyEmpty || !$('tx-budget').value) && [...$('tx-budget').options].some(o => o.value === l.budget_item_id)) $('tx-budget').value = l.budget_item_id;
+  }
+  dlg.querySelector('#tx-label').onchange = () => applyLabel(lab($('tx-label').value), false);
+  dlg.querySelector('#tx-note').onchange = () => { if (!$('tx-label').value) applyLabel(matchLabel($('tx-payee').value, $('tx-note').value), true); };
   ['tx-amount', 'tx-fee'].forEach(id => { dlg.querySelector('#' + id).oninput = e => { const v = cleanAmount(e.target.value); if (v !== e.target.value) e.target.value = v; }; });
   dlg.querySelector('#tx-payee').onchange = () => {
     // The same payee as before: the same category (and account), unless one is picked.
+    if (!$('tx-label').value) applyLabel(matchLabel($('tx-payee').value, $('tx-note').value), true);
     const p = payees.get($('tx-payee').value.trim().toLowerCase());
     if (!p || editing) return;
     if (p.category_id && !$('tx-category').value && [...$('tx-category').options].some(o => o.value === p.category_id)) $('tx-category').value = p.category_id;
@@ -658,6 +834,7 @@
       ref: $('tx-ref').value.trim().toUpperCase(),
       updated_at: new Date().toISOString()
     };
+    if (hasBooks) Object.assign(row, { book: bookNow(), label_id: k === 'transfer' ? null : $('tx-label').value || null });
     $('tx-save').disabled = true;
     try {
       const file = $('tx-file').files[0];
@@ -679,6 +856,7 @@
       }
       if (old && row.receipt_path !== undefined && row.receipt_path !== old) WK.db.storage.from(BUCKET).remove([old]);
       await afterSave(row, when);
+      await learnLabel(row);
       const p = row.payee.toLowerCase();
       if (p) payees.set(p, { payee: row.payee, category_id: row.category_id, account_id: row.account_id, kind: k });
       dlg.close();
@@ -689,6 +867,15 @@
     } catch (err){ $('tx-error').textContent = 'Not saved: ' + err.message; }
     finally { $('tx-save').disabled = false; }
   };
+
+  // A label picked by hand for a payee it doesn't know yet learns that payee, so next time it's found.
+  async function learnLabel(row){
+    const l = row.label_id && lab(row.label_id);
+    const p = (row.payee || '').trim();
+    if (!l || !p || p.length < 3 || matchLabel(p) === l) return;
+    l.matches = (l.matches || []).concat([p]);
+    await WK.db.from('money_labels').update({ matches: l.matches, updated_at: new Date().toISOString() }).eq('id', l.id);
+  }
 
   // A line that pays a budget item ticks it paid for its month; one that
   // buys a wish moves the wish to Got.
@@ -734,6 +921,7 @@
       <label>Kind<select id="acc-kind">${Object.entries(KINDS).map(([k, l]) => `<option value="${k}">${l}</option>`).join('')}</select></label>
       <label data-loan>Limit (KES)<input id="acc-limit" inputmode="numeric" placeholder="none"></label>
     </div>
+    <label id="acc-book-wrap">Personal or business<select id="acc-book"><option value="personal">Personal</option><option value="business">Business</option></select></label>
     <label id="acc-opening-label"><span id="acc-opening-text">Balance when added (KES)</span><input id="acc-opening" inputmode="decimal" placeholder="0"></label>
     <div id="acc-fix" class="acc-fix">
       <p class="small"><span id="acc-now"></span></p>
@@ -762,6 +950,8 @@
     $('acc-title').textContent = a ? a.name : 'New account';
     $('acc-name').value = a ? a.name : '';
     $('acc-kind').value = a ? a.kind : 'mpesa';
+    $('acc-book').value = a ? bookOf(a) : book === 'business' ? 'business' : 'personal';
+    $('acc-book-wrap').hidden = !hasBooks;
     $('acc-limit').value = a && a.credit_limit != null ? a.credit_limit : '';
     const loan = a && a.kind === 'loan';
     $('acc-opening').value = a ? (loan ? -num(a.opening) : num(a.opening)) || '' : '';
@@ -786,6 +976,7 @@
     const row = { name: $('acc-name').value.trim() || 'Account', kind, opening,
       credit_limit: loan && $('acc-limit').value ? Number($('acc-limit').value) : null,
       archived: $('acc-archived').checked, updated_at: new Date().toISOString() };
+    if (hasBooks) row.book = $('acc-book').value;
     let res;
     if (accEditing) res = await WK.db.from('money_accounts').update(row).eq('id', accEditing.id).select().single();
     else res = await WK.db.from('money_accounts').insert([Object.assign(row, { sort: accounts.reduce((m, a) => Math.max(m, a.sort || 0), 0) + 1 })]).select().single();
@@ -798,7 +989,7 @@
       const target = Number(fix) * (loan ? -1 : 1);
       const diff = Math.round((target - balanceOf(accEditing)) * 100) / 100;
       if (diff){
-        const { error } = await WK.db.from('money_tx').insert([{ kind: diff > 0 ? 'income' : 'expense', amount: Math.abs(diff), account_id: accEditing.id, source: 'adjust', note: 'Balance corrected', occurred_at: new Date().toISOString() }]);
+        const { error } = await WK.db.from('money_tx').insert([{ kind: diff > 0 ? 'income' : 'expense', amount: Math.abs(diff), account_id: accEditing.id, source: 'adjust', ...(hasBooks ? { book: bookOf(accEditing) } : {}), note: 'Balance corrected', occurred_at: new Date().toISOString() }]);
         if (error){ $('acc-error').textContent = 'Balance not corrected: ' + error.message; return; }
       }
     }
