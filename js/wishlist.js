@@ -12,6 +12,9 @@
 
   WK.section({ name: 'wishlist', label: 'Wishlist', load, render, reset(){ items = []; missing = false; open.clear(); } });
 
+  // Read by Money.
+  WK.wishItems = () => items;
+
   async function load(){
     const { data, error } = await WK.db.from('wishlist_items').select('*').order('sort').order('created_at');
     if (error){ missing = error.code === 'PGRST205' || error.code === '42P01'; if (missing) return; throw error; }

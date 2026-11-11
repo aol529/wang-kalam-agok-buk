@@ -1,7 +1,7 @@
 /* Quick: one place to add and find. The round "+" (bottom right, above
    the dock on phones), Ctrl/⌘-K, or "/" opens it.
    - Type, then add what you typed: to today's plan, as a journal entry,
-     a goal, or a wish.
+     a goal, a wish, or money spent ("250 lunch").
    - Or find it: journal entries, goals, blog posts, Library books (and
      the chapters of books already opened), Practice exercises and the
      sections themselves, from what's already loaded; nothing extra is
@@ -70,7 +70,8 @@
       { key: 'task', label: t ? `Add ${q} to today’s plan` : 'A task for today', icon: '✅' },
       { key: 'entry', label: t ? `Journal entry: ${q}` : 'Journal entry', icon: '📓' },
       { key: 'goal', label: t ? `Goal: ${q}` : 'Goal', icon: '🎯' },
-      { key: 'wish', label: t ? `Wish: ${q}` : 'Wish', icon: '🎁' }
+      { key: 'wish', label: t ? `Wish: ${q}` : 'Wish', icon: '🎁' },
+      { key: 'spend', label: t ? `Spent: ${q}` : 'Money spent (e.g. “250 lunch”)', icon: '💸' }
     ];
   }
   async function doAdd(key){
@@ -85,6 +86,7 @@
     if (key === 'entry') WK.openNewEntry ? WK.openNewEntry({ title: t }) : WK.openEntry(null, { kind: 'journal', title: t });
     else if (key === 'goal') WK.openGoal(null, { title: t });
     else if (key === 'wish' && WK.newWish) WK.newWish(t);
+    else if (key === 'spend' && WK.openSpend) WK.openSpend(t);
   }
 
   // ---- Find ----

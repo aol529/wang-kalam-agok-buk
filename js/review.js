@@ -34,7 +34,9 @@
     (p.data || []).forEach(r => { plans[r.plan_date] = r; });
     // Without sql/06-systems.sql there are just no routine ticks.
     const ticks = new Set((t.error ? [] : t.data || []).map(r => r.period + '|' + r.item));
-    return { plans, ticks };
+    // Money (sql/13): what went out and came in, Monday to Sunday.
+    const money = WK.moneyBetween ? await WK.moneyBetween(WK.parseDate(from).toISOString(), WK.parseDate(WK.addDays(from, 7)).toISOString()) : null;
+    return { plans, ticks, money };
   }
 
   function go(from){
@@ -189,6 +191,14 @@
           <button type="button" class="btn small" data-go="budget">Budget</button>
         </section>` : ''}
 
+        ${data.money && data.money.n ? `
+        <section class="panel">
+          <h2>Money</h2>
+          <p class="small">Spent ${kes(data.money.out)} · received ${kes(data.money.inn)}</p>
+          ${data.money.top.length ? `<ul class="mini-list">${data.money.top.map(c => `<li><span>${esc(c.name)} <span class="muted small">${kes(c.v)}</span></span></li>`).join('')}</ul>` : ''}
+          <button type="button" class="btn small" data-go="money">Money</button>
+        </section>` : ''}
+
         <section class="panel review-write">
           <h2>The review</h2>
           ${written ? `<p class="small">Written. <button type="button" class="link" data-entry="${written.id}">${esc(written.title)}</button></p>`
@@ -218,7 +228,8 @@
         missedTwice.length ? `Missed twice: ${missedTwice.map(h => h.name).join('; ')}.` : 'Never missed twice.',
         neglected.length ? `Nothing this week for: ${neglected.map(c => c.name).join(', ')}.` : 'Every life area got something.',
         slips.some(s => s.n) ? `Slips: ${slips.filter(s => s.n).map(s => `${s.name} (${s.n})`).join(', ')}.` : '',
-        bills.length ? `Budget: ${paid.length} of ${bills.length} monthly items paid.` : ''
+        bills.length ? `Budget: ${paid.length} of ${bills.length} monthly items paid.` : '',
+        data.money && data.money.n ? `Money: spent ${kes(data.money.out)}, received ${kes(data.money.inn)}${data.money.top.length ? ` (most on ${data.money.top.map(c => c.name).join(', ')})` : ''}.` : ''
       ].filter(Boolean);
       const body = 'The week in numbers\n' + lines.map(l => '- ' + l).join('\n') + '\n\n' +
         REVIEW_QUESTIONS.map(q => q + '\n\n').join('');

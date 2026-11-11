@@ -51,7 +51,7 @@
   // Five spaces: what to do (Plan), inner work (Reflect), reading (Read),
   // calming down (Calm) and what's kept (Keep). The CMS can change it.
   const GROUPS = [
-    { name: 'Plan',    items: ['today', 'planner', 'review', 'vision', 'budget', 'wishlist'] },
+    { name: 'Plan',    items: ['today', 'planner', 'review', 'vision', 'money', 'budget', 'wishlist'] },
     { name: 'Reflect', items: ['journal', 'practice', 'systems', 'bible'] },
     { name: 'Read',    items: ['library', 'blog'] },
     { name: 'Calm',    items: ['breathe', 'sounds'] },
@@ -60,7 +60,7 @@
   const DOCK = ['today', 'planner', 'breathe', 'journal'];   // on phones; the rest under More
   // Sections that share one menu item, shown as tabs above whichever is
   // open: the first is the one in the menu.
-  const FAMILIES = [['planner', 'review'], ['budget', 'wishlist'], ['practice', 'systems'], ['breathe', 'sounds']];
+  const FAMILIES = [['planner', 'review'], ['money', 'budget', 'wishlist'], ['practice', 'systems'], ['breathe', 'sounds']];
   const familyOf = name => FAMILIES.find(f => f.includes(name));
   const headOf = name => { const f = familyOf(name); return f ? f[0] : name; };
   const isTabOnly = name => { const f = familyOf(name); return !!f && f[0] !== name; };
@@ -130,6 +130,16 @@
       const s = sections.find(x => x.name === n);
       if (s && !placed.has(n)){ list[i].items.push(s); placed.add(n); }
     }));
+    // A menu saved before a family had its head (Money over Budget): the
+    // head goes in just before the first of its family the menu names.
+    FAMILIES.forEach(f => {
+      const head = sections.find(x => x.name === f[0]);
+      if (!head || placed.has(head.name)) return;
+      for (const g of list){
+        const at = g.items.findIndex(x => f.includes(x.name));
+        if (at >= 0){ g.items.splice(at, 0, head); placed.add(head.name); return; }
+      }
+    });
     sections.filter(s => !placed.has(s.name)).forEach(s => {
       const g = (s.group && list.find(x => x.name === s.group)) || list[list.length - 1];
       g.items.push(s);

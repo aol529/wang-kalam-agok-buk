@@ -11,6 +11,7 @@
   let missing = false;        // the table isn't there yet (sql/07-budget.sql)
   let month = WK.isoDate().slice(0, 7);
   const saveTimers = {};
+  let spent = {};             // budget item id → KES paid through Money this month
 
   WK.section({ name: 'budget', label: 'Budget', load, render, reset(){ items = []; missing = false; } });
   // Read by Review.
@@ -41,7 +42,20 @@
     if (error){ missing = error.code === 'PGRST205' || error.code === '42P01'; if (missing) return; throw error; }
     missing = false;
     items = data || [];
+    await loadSpent();
   }
+
+  // What Money's lines paid towards each item in the month shown.
+  async function loadSpent(){
+    spent = {};
+    const start = m => new Date(m + '-01T00:00:00+03:00').toISOString();
+    const { data, error } = await WK.db.from('money_tx').select('budget_item_id, amount, fee')
+      .not('budget_item_id', 'is', null).gte('occurred_at', start(month)).lt('occurred_at', start(shift(month, 1)));
+    if (error) return;   // Money isn't set up yet
+    (data || []).forEach(t => { spent[t.budget_item_id] = (spent[t.budget_item_id] || 0) + (Number(t.amount) || 0) + (Number(t.fee) || 0); });
+  }
+  // Money calls this after a line changes.
+  WK.budgetMoneyChanged = async () => { await loadSpent(); if (!$('section-budget').hidden) render(); };
 
   const kes = n => 'KES ' + Math.round(Number(n) || 0).toLocaleString('en-KE');
   const isPaid = it => (it.paid || []).includes(it.monthly ? month : 'once');
@@ -91,10 +105,10 @@
               <button type="button" class="btn primary" id="bud-seed">Copy in my notebook page</button>
               <button type="button" class="btn ghost" id="bud-blank">Start blank</button></div>`}
       </div>
-      <p class="muted small bud-key">Tick a monthly item when it is paid this month; it comes back unticked next month. Tap <b>monthly</b> / <b>once</b> to switch. A one-off stays ticked once bought.</p>`;
+      <p class="muted small bud-key">Tick a monthly item when it is paid this month; it comes back unticked next month. Tap <b>monthly</b> / <b>once</b> to switch. A one-off stays ticked once bought. The small green number is what Money logged against the item this month.</p>`;
 
-    $('bud-prev').onclick = () => { month = shift(month, -1); render(); };
-    $('bud-next').onclick = () => { month = shift(month, 1); render(); };
+    $('bud-prev').onclick = async () => { month = shift(month, -1); await loadSpent(); render(); };
+    $('bud-next').onclick = async () => { month = shift(month, 1); await loadSpent(); render(); };
     if ($('bud-seed')) $('bud-seed').onclick = () => seed(true);
     if ($('bud-blank')) $('bud-blank').onclick = () => seed(false);
     bind(el);
@@ -113,6 +127,7 @@
             <input class="nb-name" value="${esc(i.name)}" placeholder="Item" aria-label="Item">
             <span class="nb-dash">—</span>
             <input class="nb-amt" inputmode="numeric" value="${i.amount == null ? '' : esc(i.amount)}" placeholder="…" aria-label="Amount in KES">
+            ${spent[i.id] ? `<span class="nb-real${i.amount != null && spent[i.id] > i.amount ? ' over' : ''}" title="Paid through Money in ${esc(monthName(month))}">${esc(Math.round(spent[i.id]).toLocaleString('en-KE'))}</span>` : ''}
             <button type="button" class="nb-kind" data-kind title="Tap to switch">${i.monthly ? 'monthly' : 'once'}</button>
             <button type="button" class="nb-x" aria-label="Remove">✕</button>
           </li>`).join('')}
